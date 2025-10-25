@@ -1,2 +1,2 @@
-# Trabalho-CG
-trabalho de computação gráfica 2025/2
+# CG
+Files for the Computer Graphics course in Three.js
