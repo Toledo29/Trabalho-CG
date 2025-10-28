@@ -1,5 +1,6 @@
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
+import { criaCurva } from '../T1/objetos/curvapista.js';
 import {initRenderer, 
         initCamera,
         initDefaultBasicLight,
@@ -47,6 +48,9 @@ faixa2.position.set(0.0, 0.5, -5.0);
 scene.add(asfalto);
 
 clona(asfalto,10,scene);
+
+const curva1 = criaCurva(10, 10, 1);
+scene.add(curva1);
 
 render();
 function render()
