@@ -2,7 +2,7 @@ import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import KeyboardState from '../libs/util/KeyboardState.js';
 import {initRenderer, 
-        initCamera,
+        // initCamera,
         initDefaultBasicLight,
         setDefaultMaterial,
         InfoBox,
@@ -16,9 +16,16 @@ renderer = initRenderer();    // Init a basic renderer
 materialVermelho = setDefaultMaterial(); // create a basic material
 materialBranco = setDefaultMaterial('rgb(255, 255, 255)'); // create a basic material
 light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
-camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
-scene.add(camera); // Add camera to the scene
-orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
+// camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
+// scene.add(camera); // Add camera to the scene
+
+let car = createCar();
+camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(car.position.x - 15, car.position.y + 6, car.position.z);
+camera.up.set(0, 1, 0);
+camera.lookAt(car.position);
+scene.add(camera);
+// orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
 
 // Listen window size changes
@@ -33,9 +40,7 @@ var keyboard = new KeyboardState();
 // Clock for the keyboard pressing time
 const clock = new THREE.Clock();
 
-
-let car = createCar();
-
+// Direções de movimento do carro
 const moveDirection = {
     forward: false,
     backward: false,
@@ -45,9 +50,9 @@ const moveDirection = {
 
 car.userData = {
     speed: 0,                 // velocidade atual
-    accel: 10.0,               // aceleração ao pressionar
-    brake: 10.0,              // desaceleração ao frear
-    drag: 5,                // desaceleração natural
+    accel: 17.0,               // aceleração ao pressionar
+    brake: 17.0,              // desaceleração ao frear
+    drag: 15,                // desaceleração natural
     maxSpeed: 30,            // velocidade máxima
     maxReverseSpeed: -30,         // velocidade reversa máxima
     turnSpeed: THREE.MathUtils.degToRad(120) // velocidade de giro máxima
@@ -211,7 +216,7 @@ function createTrackGroundPlane(){
 function keyboardUpdate() 
 {
    keyboard.update();
-
+  //mapeamento dos movimentos
    moveDirection.forward = keyboard.pressed("W") || keyboard.pressed("X");
    moveDirection.backward = keyboard.pressed("S");
    moveDirection.left = keyboard.pressed("A");
@@ -225,14 +230,20 @@ function updateCar(delta) {
   if (moveDirection.forward) {
     carData.speed += carData.accel * delta;
   }
-  // Ré
-  else if (moveDirection.backward) {
-    carData.speed -= carData.brake * delta;
-  }
   //desaceleração natural
   else {
     if ((carData.speed - carData.drag * delta) >= 0) {
       carData.speed -= carData.drag * delta;
+    }
+  }
+  // Ré
+  if (moveDirection.backward) {
+    carData.speed -= carData.brake * delta;
+  }
+  // desaceleração natural ao ir para trás
+  else{
+    if ((carData.speed + carData.drag * delta) <= 0) {
+      carData.speed += carData.drag * delta;
     }
   }
 
@@ -248,6 +259,22 @@ function updateCar(delta) {
 
   // Atualizar a posição do carro
   car.translateX( carData.speed * delta );
+}
+
+function updateCameraFollow(delta) {
+  // Offset no espaço local do carro: atrás (negativo em X), acima (Y)
+  const localOffset = new THREE.Vector3(-15, 6, 0); // ajuste conforme necessário
+
+  // Converte para coordenadas do mundo
+  const worldPos = localOffset.clone();
+  car.localToWorld(worldPos);
+
+  // Interpola a posição da câmera para suavizar o movimento
+  const smoothFactor = 0.03;
+  camera.position.lerp(worldPos, smoothFactor);
+
+  // Fazer a câmera olhar para o carro
+  camera.lookAt(car.position);
 }
 
 // Use this to show information onscreen
@@ -266,6 +293,8 @@ function render()
 
   const delta = clock.getDelta();
   updateCar(delta);
+
+  updateCameraFollow(delta);
 
   requestAnimationFrame(render);
   renderer.render(scene, camera) // Render scene
