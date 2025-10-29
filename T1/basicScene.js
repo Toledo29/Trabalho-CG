@@ -1,5 +1,6 @@
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
+import KeyboardState from '../libs/util/KeyboardState.js';
 import {initRenderer, 
         initCamera,
         initDefaultBasicLight,
@@ -19,12 +20,21 @@ camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this positi
 scene.add(camera); // Add camera to the scene
 orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
+let velMax = 0.4;
+
 // Listen window size changes
 window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
 
 // Show axes (parameter is size of each axis)
 let axesHelper = new THREE.AxesHelper( 12 );
 scene.add( axesHelper );
+
+// To use the keyboard
+var keyboard = new KeyboardState();
+
+createTrack();
+let car = createCar();
+render();
 
 // // create the ground plane
 // let plane = createGroundPlaneXZ(200, 200);
@@ -168,12 +178,25 @@ function createTrackGroundPlane(){
   scene.add(plane4);
 }
 
-function createRedBlock() {
+// function createRedBlock() {
 
-  const trackBlock = new THREE.BoxGeometry(1, 1, 1);
-  const redBlock = new THREE.Mesh(trackBlock, materialVermelho);
-  scene.add(redBlock);
-  return redBlock;
+//   const trackBlock = new THREE.BoxGeometry(1, 1, 1);
+//   const redBlock = new THREE.Mesh(trackBlock, materialVermelho);
+//   scene.add(redBlock);
+//   return redBlock;
+// }
+
+function keyboardUpdate() 
+{
+   keyboard.update();
+   if ( keyboard.pressed("W") )     car.translateX( 0.4 );
+   if ( keyboard.pressed("X") )     car.translateX( 0.1 );
+   if ( keyboard.pressed("S") )    car.translateX(  -0.1 );
+
+   let angle = THREE.MathUtils.degToRad(1); 
+   if ( keyboard.pressed("A") )  car.rotateY(  angle );
+   if ( keyboard.pressed("D") )  car.rotateY( -angle );
+  //  updatePositionMessage();
 }
 
 // Use this to show information onscreen
@@ -186,11 +209,9 @@ let controls = new InfoBox();
   controls.add("* Scroll to zoom in/out.");
   controls.show();
 
-render();
-createTrack();
-createCar();
 function render()
 {
+  keyboardUpdate();
   requestAnimationFrame(render);
   renderer.render(scene, camera) // Render scene
 }
