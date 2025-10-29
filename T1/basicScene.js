@@ -20,7 +20,6 @@ camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this positi
 scene.add(camera); // Add camera to the scene
 orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
-let velMax = 0.4;
 
 // Listen window size changes
 window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
@@ -31,9 +30,32 @@ scene.add( axesHelper );
 
 // To use the keyboard
 var keyboard = new KeyboardState();
+// Clock for the keyboard pressing time
+const clock = new THREE.Clock();
+
+
+let car = createCar();
+
+const moveDirection = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false
+};
+
+car.userData = {
+    speed: 0,                 // velocidade atual
+    accel: 10.0,               // aceleração ao pressionar
+    brake: 10.0,              // desaceleração ao frear
+    drag: 5,                // desaceleração natural
+    maxSpeed: 30,            // velocidade máxima
+    maxReverseSpeed: -30,         // velocidade reversa máxima
+    turnSpeed: THREE.MathUtils.degToRad(120) // velocidade de giro máxima
+};
+
+// Create the track and the car
 
 createTrack();
-let car = createCar();
 render();
 
 // // create the ground plane
@@ -189,14 +211,43 @@ function createTrackGroundPlane(){
 function keyboardUpdate() 
 {
    keyboard.update();
-   if ( keyboard.pressed("W") )     car.translateX( 0.4 );
-   if ( keyboard.pressed("X") )     car.translateX( 0.1 );
-   if ( keyboard.pressed("S") )    car.translateX(  -0.1 );
 
-   let angle = THREE.MathUtils.degToRad(1); 
-   if ( keyboard.pressed("A") )  car.rotateY(  angle );
-   if ( keyboard.pressed("D") )  car.rotateY( -angle );
-  //  updatePositionMessage();
+   moveDirection.forward = keyboard.pressed("W") || keyboard.pressed("X");
+   moveDirection.backward = keyboard.pressed("S");
+   moveDirection.left = keyboard.pressed("A");
+   moveDirection.right = keyboard.pressed("D");
+}
+
+function updateCar(delta) {
+  const carData = car.userData;
+
+  // Aceleração
+  if (moveDirection.forward) {
+    carData.speed += carData.accel * delta;
+  }
+  // Ré
+  else if (moveDirection.backward) {
+    carData.speed -= carData.brake * delta;
+  }
+  //desaceleração natural
+  else {
+    if ((carData.speed - carData.drag * delta) >= 0) {
+      carData.speed -= carData.drag * delta;
+    }
+  }
+
+  // Limitar a velocidade
+  carData.speed = THREE.MathUtils.clamp(carData.speed, carData.maxReverseSpeed, carData.maxSpeed);
+
+  // Giro do carro
+  if (moveDirection.left) {
+    car.rotation.y += carData.turnSpeed * delta;
+  } else if (moveDirection.right) {
+    car.rotation.y -= carData.turnSpeed * delta;
+  }
+
+  // Atualizar a posição do carro
+  car.translateX( carData.speed * delta );
 }
 
 // Use this to show information onscreen
@@ -212,6 +263,10 @@ let controls = new InfoBox();
 function render()
 {
   keyboardUpdate();
+
+  const delta = clock.getDelta();
+  updateCar(delta);
+
   requestAnimationFrame(render);
   renderer.render(scene, camera) // Render scene
 }
