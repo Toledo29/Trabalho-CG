@@ -21,7 +21,7 @@ light = initDefaultBasicLight(scene); // Create a basic light to illuminate the 
 
 let car = createCar();
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(car.position.x - 15, car.position.y + 6, car.position.z);
+camera.position.set(car.position.x - 15, car.position.y + 4, car.position.z);
 camera.up.set(0, 1, 0);
 camera.lookAt(car.position);
 scene.add(camera);
@@ -63,7 +63,7 @@ car.userData = {
 createTrack();
 render();
 
-// // create the ground plane
+// create the ground plane
 // let plane = createGroundPlaneXZ(200, 200);
 // plane.position.set(10, 100, 10);
 // scene.add(plane);
@@ -261,9 +261,9 @@ function updateCar(delta) {
   car.translateX( carData.speed * delta );
 }
 
-function updateCameraFollow(delta) {
+function updateCameraFollow() {
   // Offset no espaço local do carro: atrás (negativo em X), acima (Y)
-  const localOffset = new THREE.Vector3(-15, 6, 0); // ajuste conforme necessário
+  const localOffset = new THREE.Vector3(-15, 4, 0); // ajuste conforme necessário
 
   // Converte para coordenadas do mundo
   const worldPos = localOffset.clone();
@@ -271,14 +271,20 @@ function updateCameraFollow(delta) {
 
   // Interpola a posição da câmera para suavizar o movimento
   const smoothFactor = 0.03;
-  camera.position.lerp(worldPos, smoothFactor);
-
+  const smoothFactorBackward = 0.1;
+  if(moveDirection.backward){
+    camera.position.lerp(worldPos, smoothFactorBackward);
+  }
+  else{
+    camera.position.lerp(worldPos, smoothFactor);
+  }
   // Fazer a câmera olhar para o carro
   camera.lookAt(car.position);
 }
 
 // Use this to show information onscreen
 let controls = new InfoBox();
+  controls.
   controls.add("Basic Scene");
   controls.addParagraph();
   controls.add("Use mouse to interact:");
@@ -294,7 +300,7 @@ function render()
   const delta = clock.getDelta();
   updateCar(delta);
 
-  updateCameraFollow(delta);
+  updateCameraFollow();
 
   requestAnimationFrame(render);
   renderer.render(scene, camera) // Render scene
