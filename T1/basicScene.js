@@ -284,7 +284,6 @@ function updateCameraFollow() {
 
 // Use this to show information onscreen
 let controls = new InfoBox();
-  controls.
   controls.add("Basic Scene");
   controls.addParagraph();
   controls.add("Use mouse to interact:");
