@@ -9,7 +9,7 @@ import {initRenderer,
         onWindowResize,
         createGroundPlaneXZ} from "../libs/util/util.js";
 
-let scene, renderer, camera, materialA, materialB, materialC, light, orbit; // Initial variables
+let scene, renderer, camera, materialA, light, orbit; // Initial variables
 scene = new THREE.Scene();    // Create main scene
 renderer = initRenderer();    // Init a basic renderer
 materialA = setDefaultMaterial('yellow');
@@ -36,10 +36,11 @@ let Dbarreira = new THREE.Mesh(pilar, materialA);
 
 Ebarreira.add(Dbarreira);
 
-barreira.position.set(0.0, 10.0, 0.0);
-barreira2.position.set(0.0, 0.0, 30.0);
+Ebarreira.position.set(10.0, 10.0, 0.0);
+Dbarreira.position.set(0.0, 0.0, 10.0);
 
-scene.add(barreira);
+scene.add(Ebarreira);
+scene.add(Dbarreira);
 
 //clona(asfalto,10,scene);
 
