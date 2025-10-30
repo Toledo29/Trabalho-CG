@@ -1,6 +1,6 @@
 import * as THREE from  'three';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
-import { criaCurva } from '../T1/objetos/curvapista.js';
+//import { criaCurva } from '../T1/objetos/curvapista.js';
 import {initRenderer, 
         initCamera,
         initDefaultBasicLight,
@@ -12,9 +12,8 @@ import {initRenderer,
 let scene, renderer, camera, materialA, materialB, materialC, light, orbit; // Initial variables
 scene = new THREE.Scene();    // Create main scene
 renderer = initRenderer();    // Init a basic renderer
-materialA = setDefaultMaterial('darkgray');
-materialB = setDefaultMaterial('green');
-materialC = setDefaultMaterial('white');
+materialA = setDefaultMaterial('yellow');
+materialB = setDefaultMaterial('black');
 light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
 scene.add(camera); // Add camera to the scene
@@ -31,26 +30,27 @@ scene.add( axesHelper );
 let plane = createGroundPlaneXZ(1000, 1000);
 scene.add(plane);
 
-let pista = new THREE.BoxGeometry(20, 1, 20);
-let linha = new THREE.BoxGeometry(1, 0.05, 5);
-let linha2 = new THREE.BoxGeometry(1, 0.05, 5);
-let asfalto = new THREE.Mesh(pista, materialA);
-let faixa = new THREE.Mesh(linha, materialC);
-let faixa2 = new THREE.Mesh(linha2, materialC);
+let pilar = new THREE.BoxGeometry(20, 20, 20);
 
-asfalto.add(faixa);
-asfalto.add(faixa2);
+let Ebarreira = new THREE.Mesh(pilar, materialA);
+let Ebarreira2 = new THREE.Mesh(pilar, materialB);
+let Dbarreira = new THREE.Mesh(pilar, materialA);
+let Dbarreira2 = new THREE.Mesh(pilar, materialB);
 
-asfalto.position.set(0.0, 0.5, 0.0);
-faixa.position.set(0.0, 0.5, 5.0);
-faixa2.position.set(0.0, 0.5, -5.0);
+Ebarreira.add(Ebarreira2);
+Ebarreira.add(Ebarreira2);
+Ebarreira.add(Dbarreira);
+Ebarreira.add(Dbarreira2);
 
-scene.add(asfalto);
+barreira.position.set(0.0, 10.0, 0.0);
+barreira2.position.set(20.0, 0.0, 0.0);
 
-clona(asfalto,10,scene);
+scene.add(barreira);
 
-const curva1 = criaCurva(10, 10, 1);
-scene.add(curva1);
+//clona(asfalto,10,scene);
+
+//const curva1 = criaCurva(10, 10, 1);
+//scene.add(curva1);
 
 render();
 function render()

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { setDefaultMaterial } from '../libs/util/util.js';
 
-const materialA = setDefaultMaterial('darkgray');
+const materialA = setDefaultMaterial('yellow');
 const materialC = setDefaultMaterial('white');
 
 // Exporta a função para uso externo
