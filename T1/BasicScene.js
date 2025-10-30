@@ -13,7 +13,6 @@ let scene, renderer, camera, materialA, materialB, materialC, light, orbit; // I
 scene = new THREE.Scene();    // Create main scene
 renderer = initRenderer();    // Init a basic renderer
 materialA = setDefaultMaterial('yellow');
-materialB = setDefaultMaterial('black');
 light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
 camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
 scene.add(camera); // Add camera to the scene
@@ -30,20 +29,15 @@ scene.add( axesHelper );
 let plane = createGroundPlaneXZ(1000, 1000);
 scene.add(plane);
 
-let pilar = new THREE.BoxGeometry(20, 20, 20);
+let pilar = new THREE.BoxGeometry(20, 20, 60);
 
 let Ebarreira = new THREE.Mesh(pilar, materialA);
-let Ebarreira2 = new THREE.Mesh(pilar, materialB);
 let Dbarreira = new THREE.Mesh(pilar, materialA);
-let Dbarreira2 = new THREE.Mesh(pilar, materialB);
 
-Ebarreira.add(Ebarreira2);
-Ebarreira.add(Ebarreira2);
 Ebarreira.add(Dbarreira);
-Ebarreira.add(Dbarreira2);
 
 barreira.position.set(0.0, 10.0, 0.0);
-barreira2.position.set(20.0, 0.0, 0.0);
+barreira2.position.set(0.0, 0.0, 30.0);
 
 scene.add(barreira);
 
