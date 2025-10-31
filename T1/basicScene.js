@@ -6,6 +6,7 @@ import {initRenderer,
         initDefaultBasicLight,
         setDefaultMaterial,
         InfoBox,
+        SecondaryBox,
         onWindowResize,
         degreesToRadians,
         createGroundPlaneXZ} from "../libs/util/util.js";
@@ -25,7 +26,8 @@ camera.position.set(car.position.x - 15, car.position.y + 4, car.position.z);
 camera.up.set(0, 1, 0);
 camera.lookAt(car.position);
 scene.add(camera);
-// orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
+const speedBox = new SecondaryBox("");
+speedBox.changeMessage("Velocidade: " + Number(car.userData.speed).toFixed(0));
 
 
 // Listen window size changes
@@ -57,6 +59,18 @@ car.userData = {
     maxReverseSpeed: -30,         // velocidade reversa máxima
     turnSpeed: THREE.MathUtils.degToRad(120) // velocidade de giro máxima
 };
+
+
+let controls = new InfoBox();
+controls.infoBox.style.bottom = "";
+controls.infoBox.style.top = "0";
+controls.add("Car Race");
+controls.addParagraph();
+controls.add("* Seta para a Esquerda/Direita para girar o carro.");
+controls.add("* Seta para Cima/X para acelerar o carro.");
+controls.add("* Seta para Baixo para frear o carro.");
+controls.show();
+
 
 // Create the track and the car
 
@@ -217,10 +231,10 @@ function keyboardUpdate()
 {
    keyboard.update();
   //mapeamento dos movimentos
-   moveDirection.forward = keyboard.pressed("W") || keyboard.pressed("X");
-   moveDirection.backward = keyboard.pressed("S");
-   moveDirection.left = keyboard.pressed("A");
-   moveDirection.right = keyboard.pressed("D");
+   moveDirection.forward = keyboard.pressed("up") || keyboard.pressed("X");
+   moveDirection.backward = keyboard.pressed("down");
+   moveDirection.left = keyboard.pressed("left");
+   moveDirection.right = keyboard.pressed("right");
 }
 
 function updateCar(delta) {
@@ -282,15 +296,6 @@ function updateCameraFollow() {
   camera.lookAt(car.position);
 }
 
-// Use this to show information onscreen
-let controls = new InfoBox();
-  controls.add("Basic Scene");
-  controls.addParagraph();
-  controls.add("Use mouse to interact:");
-  controls.add("* Left button to rotate");
-  controls.add("* Right button to translate (pan)");
-  controls.add("* Scroll to zoom in/out.");
-  controls.show();
 
 function render()
 {
@@ -300,6 +305,8 @@ function render()
   updateCar(delta);
 
   updateCameraFollow();
+
+  speedBox.changeMessage("Velocidade: " + Number(car.userData.speed).toFixed(0));
 
   requestAnimationFrame(render);
   renderer.render(scene, camera) // Render scene
