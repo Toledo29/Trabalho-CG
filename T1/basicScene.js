@@ -20,6 +20,18 @@ light = initDefaultBasicLight(scene); // Create a basic light to illuminate the 
 // camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
 // scene.add(camera); // Add camera to the scene
 
+let track1, track2; 
+let currentTrack = 1;
+
+// Definição das posições iniciais (Ajuste estes valores para o seu bloco laranja)
+const START_POS_TRACK1 = new THREE.Vector3(-80, 0.5, -90); // Exemplo Pista Quadrada
+const START_ROT_TRACK1 = degreesToRadians(0); // Virado para 'frente'
+
+const START_POS_TRACK2 = new THREE.Vector3(-10, 0.5, -90); // Exemplo Pista em 'L'
+const START_ROT_TRACK2 = degreesToRadians(0); // Virado para 'frente'
+
+// ... (continue o resto do seu código)
+
 let car = createCar();
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(car.position.x - 15, car.position.y + 4, car.position.z);
@@ -107,7 +119,22 @@ function createCar() {
 }
 
 function createTrack() {
-  createTrackGroundPlane();
+  // Cria o grupo para a Pista 1 (Quadrada)
+  track1 = new THREE.Group();
+  createSquareTrackElements(track1, materialBranco);
+  scene.add(track1);
+
+  // Cria o grupo para a Pista 2 (Em "L")
+  track2 = new THREE.Group();
+  createLTrackElements(track2, materialBranco);
+  scene.add(track2);
+
+  // Inicia com a Pista 1 visível e a Pista 2 invisível
+  track1.visible = true;
+  track2.visible = false;
+  
+  // Posiciona o carro na pista inicial
+  resetCarPosition(1);
 }
 
 // // Criando um por um bloco de chão da pista
@@ -175,18 +202,18 @@ function createTrack() {
 
 // Criando 4 partes da pista
 
-function createTrackGroundPlane(){
-  let planeGeometryX = new THREE.PlaneGeometry(200, 20, 10, 10);
-  let planeGeometryZ = new THREE.PlaneGeometry(20, 200, 10, 10);
-  let plane1 = new THREE.Mesh(planeGeometryX, materialBranco);
-  let plane2 = new THREE.Mesh(planeGeometryX, materialBranco);
-  let plane3 = new THREE.Mesh(planeGeometryZ, materialBranco);
-  let plane4 = new THREE.Mesh(planeGeometryZ, materialBranco);
+function createSquareTrackElements(trackGroup, material) {
+  
+  const trackWidth = 20; // Ajuste baseado no tamanho do seu carro
+  let planeGeometryX = new THREE.PlaneGeometry(200, trackWidth, 10, 10);
+  let planeGeometryZ = new THREE.PlaneGeometry(trackWidth, 200, 10, 10);
+  
+  let plane1 = new THREE.Mesh(planeGeometryX, material);
+  let plane2 = new THREE.Mesh(planeGeometryX, material);
+  let plane3 = new THREE.Mesh(planeGeometryZ, material);
+  let plane4 = new THREE.Mesh(planeGeometryZ, material);
 
-  let mat4Plane1 = new THREE.Matrix4(); // Aux mat4 matrix
-  let mat4Plane2 = new THREE.Matrix4(); // Aux mat4 matrix
-  let mat4Plane3 = new THREE.Matrix4(); // Aux mat4 matrix
-  let mat4Plane4 = new THREE.Matrix4(); // Aux mat4 matrix
+  
 
   plane1.receiveShadow = true;
   plane2.receiveShadow = true;
@@ -198,27 +225,126 @@ function createTrackGroundPlane(){
   plane3.matrixAutoUpdate = false;
   plane4.matrixAutoUpdate = false;
 
-  plane1.matrix.identity();    // resetting matrices
-  plane2.matrix.identity();    // resetting matrices
-  plane3.matrix.identity();    // resetting matrices
-  plane4.matrix.identity();    // resetting matrices
-  // Will execute R1 and then T1
+  let mat4 = new THREE.Matrix4();
+  
+  // Topo e Fundo (Horizontal)
+  plane1.matrix.identity().multiply(mat4.makeTranslation(0, -0.1, 90)).multiply(mat4.makeRotationX(degreesToRadians(-90))); 
+  plane2.matrix.identity().multiply(mat4.makeTranslation(0, -0.1, -90)).multiply(mat4.makeRotationX(degreesToRadians(-90))); 
+  
+  // Esquerda e Direita (Vertical)
+  plane3.matrix.identity().multiply(mat4.makeTranslation(-90, -0.1, 0)).multiply(mat4.makeRotationX(degreesToRadians(-90)));
+  plane4.matrix.identity().multiply(mat4.makeTranslation(90, -0.1, 0)).multiply(mat4.makeRotationX(degreesToRadians(-90)));
 
-  plane1.matrix.multiply(mat4Plane1.makeTranslation(0, -0.1, 90)); // T1
-  plane1.matrix.multiply(mat4Plane1.makeRotationX(degreesToRadians(-90))); // R1
-  plane2.matrix.multiply(mat4Plane2.makeTranslation(0, -0.1, -90)); // T1
-  plane2.matrix.multiply(mat4Plane2.makeRotationX(degreesToRadians(-90))); // R1
-  plane3.matrix.multiply(mat4Plane3.makeTranslation(-90, -0.1, 0));
-  plane3.matrix.multiply(mat4Plane3.makeRotationX(degreesToRadians(-90))); // R1
-  plane4.matrix.multiply(mat4Plane4.makeTranslation(90, -0.1, 0));
-  plane4.matrix.multiply(mat4Plane4.makeRotationX(degreesToRadians(-90))); // R1
-
-  scene.add(plane1);
-  scene.add(plane2);
-  scene.add(plane3);
-  scene.add(plane4);
+  trackGroup.add(plane1);
+  trackGroup.add(plane2);
+  trackGroup.add(plane3);
+  trackGroup.add(plane4);
 }
 
+
+// --- PISTA 2: EM "L" (AJUSTADA CONFORME SUA DESCRIÇÃO) ---
+function createLTrackElements(trackGroup, material) {
+  const trackWidth = 20; // Largura da pista
+  
+  // Segmentos e suas dimensões/posições centrais
+  const segmentData = [
+    // 1. Reta de Baixo (Completa: 200) - De X=-100 a 100
+    { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, -0.1, -90) },
+    
+    // 2. Reta da Direita (Completa: 200) - De Z=-100 a 100
+    { length: 180, isHorizontal: false, pos: new THREE.Vector3(90, -0.1, 10) },
+    
+    // 3. Reta Superior, Parte 1 (60% de 200 = 120) - De X=90 a X=-30. Centro em X=30
+    // O carro vira à direita na parte de cima, vindo de X=90.
+    { length: 100, isHorizontal: true, pos: new THREE.Vector3(30, -0.1, 90) },
+    
+    // 4. Reta Descendo (60% de 200 = 120) - De Z=90 a Z=-30. Centro em Z=30. X=-30.
+    { length: 100, isHorizontal: false, pos: new THREE.Vector3(-10, -0.1, 30) },
+
+    // 5. Reta Interna Esquerda (50% do restante de X = 50% de 80 = 40) - De X=-30 a X=-70. Centro em X=-50. Z=-30.
+    { length: 80, isHorizontal: true, pos: new THREE.Vector3(-60, -0.1, -10) },
+    
+    
+    // 6. Reta de Conexão (50% do restante de X = 50% de 80 = 40) - De X=-70 a X=-100. Centro em X=-85. Z=-70.
+    { length: 60, isHorizontal: false, pos: new THREE.Vector3(-90, -0.1, -50) },
+
+    
+
+  ];
+
+  let mat4Rotation = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
+
+  segmentData.forEach(item => {
+    let geometry;
+    // Cria a geometria (Comprimento, Largura) ou (Largura, Comprimento)
+    if (item.isHorizontal) {
+      geometry = new THREE.PlaneGeometry(item.length, trackWidth, 10, 10);
+    } else {
+      geometry = new THREE.PlaneGeometry(trackWidth, item.length, 10, 10);
+    }
+    
+    let mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
+    mesh.matrixAutoUpdate = false;
+    mesh.matrix.identity();
+    
+    // Aplica Translação e depois Rotação
+    let mat4Translation = new THREE.Matrix4().makeTranslation(item.pos.x, item.pos.y, item.pos.z);
+    mesh.matrix.multiply(mat4Translation); 
+    mesh.matrix.multiply(mat4Rotation);
+
+    trackGroup.add(mesh);
+  });
+}
+
+// --- FUNÇÃO PARA REPOSICIONAR O CARRO ---
+function resetCarPosition(trackNumber) {
+    let newPos, newRot;
+
+    if (trackNumber === 1) {
+        newPos = START_POS_TRACK1;
+        newRot = START_ROT_TRACK1;
+    } else { // trackNumber === 2
+        newPos = START_POS_TRACK2;
+        newRot = START_ROT_TRACK2;
+    }
+
+    // Reposiciona o veículo no bloco inicial [cite: 13]
+    car.position.copy(newPos);
+    // Vira o veículo para a direção indicada com uma seta [cite: 13]
+    car.rotation.y = newRot;
+    
+    // O veículo será posicionado  e sua velocidade deve ser zerada
+    car.userData.speed = 0;
+}
+
+
+// --- MODIFICAÇÃO DE keyboardUpdate ---
+function keyboardUpdate() 
+{
+  keyboard.update();
+
+  
+//mapeamento dos movimentos
+   moveDirection.forward = keyboard.pressed("up") || keyboard.pressed("X");
+   moveDirection.backward = keyboard.pressed("down");
+   moveDirection.left = keyboard.pressed("left");
+   moveDirection.right = keyboard.pressed("right");
+
+  // Lógica de Troca de Pistas
+  if (keyboard.down("1") && currentTrack !== 1) {
+      currentTrack = 1;
+      track1.visible = true;
+      track2.visible = false;
+      resetCarPosition(1);
+  } 
+  else if (keyboard.down("2") && currentTrack !== 2) {
+      currentTrack = 2;
+      track1.visible = false;
+      track2.visible = true;
+      resetCarPosition(2);
+  }
+}
 // function createRedBlock() {
 
 //   const trackBlock = new THREE.BoxGeometry(1, 1, 1);
@@ -227,15 +353,7 @@ function createTrackGroundPlane(){
 //   return redBlock;
 // }
 
-function keyboardUpdate() 
-{
-   keyboard.update();
-  //mapeamento dos movimentos
-   moveDirection.forward = keyboard.pressed("up") || keyboard.pressed("X");
-   moveDirection.backward = keyboard.pressed("down");
-   moveDirection.left = keyboard.pressed("left");
-   moveDirection.right = keyboard.pressed("right");
-}
+
 
 function updateCar(delta) {
   const carData = car.userData;
