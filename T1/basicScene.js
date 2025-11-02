@@ -30,6 +30,13 @@ const START_ROT_TRACK1 = degreesToRadians(0); // Virado para 'frente'
 const START_POS_TRACK2 = new THREE.Vector3(-10, 0.5, -90); // Exemplo Pista em 'L'
 const START_ROT_TRACK2 = degreesToRadians(0); // Virado para 'frente'
 
+// --- ADIÇÃO --- Variáveis para contagem de voltas (mantidas aqui junto das posições)
+let currentLap = 0;
+const MAX_LAPS = 4;
+let passedFinishLine = false;
+let gameFinished = false;
+// --- FIM ADIÇÃO ---
+
 // ... (continue o resto do seu código)
 
 let car = createCar();
@@ -40,6 +47,24 @@ camera.lookAt(car.position);
 scene.add(camera);
 const speedBox = new SecondaryBox("");
 speedBox.changeMessage("Velocidade: " + Number(car.userData.speed).toFixed(0));
+
+
+const lapDiv = document.createElement("div");
+lapDiv.id = "lap-counter";
+lapDiv.style.position = "absolute";
+lapDiv.style.right = "20px";
+lapDiv.style.bottom = "20px";
+lapDiv.style.padding = "6px 10px";
+lapDiv.style.background = "rgba(0,0,0,0.6)";
+lapDiv.style.color = "white";
+lapDiv.style.borderRadius = "6px";
+lapDiv.style.zIndex = "9999";
+lapDiv.style.fontFamily = "Arial, sans-serif";
+lapDiv.style.fontSize = "14px";
+lapDiv.style.textAlign = "right";
+lapDiv.innerText = "Volta: 0 / " + MAX_LAPS; // usa MAX_LAPS
+document.body.appendChild(lapDiv);
+
 
 
 // Listen window size changes
@@ -122,11 +147,44 @@ function createTrack() {
   // Cria o grupo para a Pista 1 (Quadrada)
   track1 = new THREE.Group();
   createSquareTrackElements(track1, materialBranco);
-  scene.add(track1);
+
+  // --- ADIÇÃO --- Checkpoint da Pista 1 (visível, amarelo e grande)
+  // 
+  const checkpointGeo1 = new THREE.PlaneGeometry(30, 40);
+  const checkpointMat1 = new THREE.MeshBasicMaterial({
+    color: "yellow",
+    opacity: 0.25,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  const checkpoint1 = new THREE.Mesh(checkpointGeo1, checkpointMat1);
+  checkpoint1.rotation.x = degreesToRadians(-90);
+  // posiciona exatamente no ponto inicial da pista 1
+  checkpoint1.position.set(START_POS_TRACK1.x, 0.05, START_POS_TRACK1.z);
+  track1.add(checkpoint1);
+  
+  // --- FIM ADIÇÃO ---
 
   // Cria o grupo para a Pista 2 (Em "L")
   track2 = new THREE.Group();
   createLTrackElements(track2, materialBranco);
+
+  // --- ADIÇÃO --- Checkpoint da Pista 2 (visível, amarelo e grande)
+  const checkpointGeo2 = new THREE.PlaneGeometry(30, 40);
+  const checkpointMat2 = new THREE.MeshBasicMaterial({
+    color: "yellow",
+    opacity: 0.25,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  const checkpoint2 = new THREE.Mesh(checkpointGeo2, checkpointMat2);
+  checkpoint2.rotation.x = degreesToRadians(-90);
+  // posiciona exatamente no ponto inicial da pista 2
+  checkpoint2.position.set(START_POS_TRACK2.x, 0.05, START_POS_TRACK2.z);
+  track2.add(checkpoint2);
+  // --- FIM ADIÇÃO ---
+
+  scene.add(track1);
   scene.add(track2);
 
   // Inicia com a Pista 1 visível e a Pista 2 invisível
@@ -135,6 +193,11 @@ function createTrack() {
   
   // Posiciona o carro na pista inicial
   resetCarPosition(1);
+
+  // --- ADIÇÃO --- Guarda os checkpoints nos userData dos grupos para uso posterior
+  track1.userData.checkpoint = checkpoint1;
+  track2.userData.checkpoint = checkpoint2;
+  // --- FIM ADIÇÃO ---
 }
 
 // // Criando um por um bloco de chão da pista
@@ -316,6 +379,13 @@ function resetCarPosition(trackNumber) {
     
     // O veículo será posicionado  e sua velocidade deve ser zerada
     car.userData.speed = 0;
+
+    // --- ADIÇÃO --- reset das voltas ao reposicionar (útil ao trocar de pista)
+    currentLap = 0;
+    lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    passedFinishLine = false;
+    gameFinished = false;
+    // --- FIM ADIÇÃO ---
 }
 
 
@@ -393,6 +463,8 @@ function updateCar(delta) {
   car.translateX( carData.speed * delta );
 }
 
+
+
 function updateCameraFollow() {
   // Offset no espaço local do carro: atrás (negativo em X), acima (Y)
   const localOffset = new THREE.Vector3(-15, 4, 0); // ajuste conforme necessário
@@ -414,6 +486,35 @@ function updateCameraFollow() {
   camera.lookAt(car.position);
 }
 
+function checkLapCount() {
+  if (gameFinished) return;
+
+  const checkpoint = currentTrack === 1 ? track1.userData.checkpoint : track2.userData.checkpoint;
+  if (!checkpoint) return;
+
+  // cria bounding box do checkpoint e do carro
+  const carBox = new THREE.Box3().setFromObject(car);
+  const checkpointBox = new THREE.Box3().setFromObject(checkpoint);
+
+  // verifica colisão
+  if (carBox.intersectsBox(checkpointBox)) {
+    if (!passedFinishLine) {
+      passedFinishLine = true; // marcou que passou pelo checkpoint
+    }
+  } else {
+    // quando sai do checkpoint, conta a volta se já tinha passado
+    if (passedFinishLine) {
+      passedFinishLine = false;
+      currentLap++;
+      lapDiv.innerText = "Volta: " + currentLap + " / " + MAX_LAPS;
+      if (currentLap >= MAX_LAPS) {
+        gameFinished = true;
+        lapDiv.innerText = "FIM DE JOGO! 🏁";
+      }
+    }
+  }
+}
+
 
 function render()
 {
@@ -423,6 +524,10 @@ function render()
   updateCar(delta);
 
   updateCameraFollow();
+
+  // --- ADIÇÃO --- checar contagem de voltas a cada frame
+  checkLapCount();
+  // --- FIM ADIÇÃO ---
 
   speedBox.changeMessage("Velocidade: " + Number(car.userData.speed).toFixed(0));
 
