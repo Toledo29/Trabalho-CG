@@ -21,6 +21,8 @@ light = initDefaultBasicLight(scene); // Create a basic light to illuminate the 
 //camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
 //scene.add(camera); // Add camera to the scene
 
+const barreiras = [];
+
 let car = createCar();
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(car.position.x - 15, car.position.y + 4, car.position.z);
@@ -86,7 +88,7 @@ function createCar() {
   scene.add(carbox);
   carbox.add(cabin);
   carbox.add(carfront);
-  carbox.position.set(-100.0, 0.5, -100.0);
+  carbox.position.set(-90.0, 0.5, -50.0);
   return carbox;
 }
 
@@ -94,44 +96,39 @@ function createTrack() {
   createTrackGroundPlane();
 }
 
-function createWall(){
-
+function createWall() {
   let pilar = new THREE.BoxGeometry(5, 5, 200);
   let pilarmenor = new THREE.BoxGeometry(5, 5, 160);
   let pilar2 = new THREE.BoxGeometry(200, 5, 5);
   let pilar2menor = new THREE.BoxGeometry(160, 5, 5);
 
-  let Ebarreira = new THREE.Mesh(pilar, materialA);
-  let Dbarreira = new THREE.Mesh(pilarmenor, materialA);
-  let Ebarreira2 = new THREE.Mesh(pilar, materialA);
-  let Dbarreira2 = new THREE.Mesh(pilarmenor, materialA);
+  const todas = [
+    new THREE.Mesh(pilar, materialA),
+    new THREE.Mesh(pilarmenor, materialA),
+    new THREE.Mesh(pilar, materialA),
+    new THREE.Mesh(pilarmenor, materialA),
+    new THREE.Mesh(pilar2, materialA),
+    new THREE.Mesh(pilar2menor, materialA),
+    new THREE.Mesh(pilar2, materialA),
+    new THREE.Mesh(pilar2menor, materialA)
+  ];
 
-  let Ebarreira_90 = new THREE.Mesh(pilar2, materialA);
-  let Dbarreira_90 = new THREE.Mesh(pilar2menor, materialA);
-  let Ebarreira2_90 = new THREE.Mesh(pilar2, materialA);
-  let Dbarreira2_90 = new THREE.Mesh(pilar2menor, materialA);
+  // Posicionamento
+  todas[0].position.set(-102.5, 2.5, 0.0);
+  todas[1].position.set(-77.5, 2.5, 0.0);
+  todas[2].position.set(102.5, 2.5, 0.0);
+  todas[3].position.set(77.5, 2.5, 0.0);
+  todas[4].position.set(0.0, 2.5, 102.5);
+  todas[5].position.set(0.0, 2.5, 77.5);
+  todas[6].position.set(0.0, 2.5, -102.5);
+  todas[7].position.set(0.0, 2.5, -77.5);
 
-  Ebarreira.position.set(-102.5, 2.5, 0.0);
-  Dbarreira.position.set(-77.5, 2.5,0.0);
-
-  Ebarreira2.position.set(102.5, 2.5, 0.0);
-  Dbarreira2.position.set(77.5, 2.5,0.0);
-
-  Ebarreira_90.position.set(0.0, 2.5,102.5);
-  Dbarreira_90.position.set(0.0, 2.5,77.5);
-
-  Ebarreira2_90.position.set(0.0, 2.5,-102.5);
-  Dbarreira2_90.position.set(0.0, 2.5,-77.5);
-
-
-  scene.add(Ebarreira);
-  scene.add(Dbarreira);
-  scene.add(Ebarreira2);
-  scene.add(Dbarreira2);
-  scene.add(Ebarreira_90);
-  scene.add(Dbarreira_90);
-  scene.add(Ebarreira2_90);
-  scene.add(Dbarreira2_90);
+  // Adiciona todas à cena e registra suas bounding boxes
+  todas.forEach(obj => {
+    scene.add(obj);
+    const bb = new THREE.Box3().setFromObject(obj);
+    barreiras.push({ mesh: obj, bb });
+  });
 }
 
 function createTrackGroundPlane(){
@@ -226,6 +223,54 @@ function updateCar(delta) {
   car.translateX( carData.speed * delta );
 }
 
+function checkCarCollision() {
+  const carBB = new THREE.Box3().setFromObject(car);
+  const carDir = new THREE.Vector3(Math.cos(car.rotation.y), 0, -Math.sin(car.rotation.y)); // direção atual do carro
+
+  for (const barreira of barreiras) {
+    barreira.bb.setFromObject(barreira.mesh);
+    if (carBB.intersectsBox(barreira.bb)) {
+
+      // Define vetor normal da barreira com base em seu formato (horizontal ou vertical)
+      const normal = new THREE.Vector3();
+      const size = new THREE.Vector3();
+      barreira.bb.getSize(size);
+
+      // Barreiras longas no eixo Z têm normais ±X, no eixo X têm normais ±Z
+      if (size.z > size.x) {
+        normal.set(Math.sign(barreira.mesh.position.x), 0, 0);
+      } else {
+        normal.set(0, 0, Math.sign(barreira.mesh.position.z));
+      }
+
+      // Calcula o ângulo entre a direção do carro e a normal da barreira
+      const angleRad = carDir.angleTo(normal);
+      const angleDeg = THREE.MathUtils.radToDeg(angleRad);
+
+      // Calcula fator de redução: 1 para ≤90°, 0 para 180°
+      let reductionFactor = 1.0;
+      if (angleDeg > 90) {
+        reductionFactor = 1 - (angleDeg - 90) / 90; // linear decay from 90°→180°
+        reductionFactor = Math.max(0, reductionFactor);
+      }
+
+      // Reduz gradualmente a velocidade
+      car.userData.speed *= reductionFactor;
+
+      // Corrige leve sobreposição empurrando o carro para trás um pouco
+      const pushBack = normal.clone().multiplyScalar(0.2 * (1 - reductionFactor));
+      car.position.add(pushBack);
+
+      console.log(
+        `💥 Colisão! Ângulo: ${angleDeg.toFixed(1)}°, Fator de redução: ${reductionFactor.toFixed(2)}`
+      );
+
+      return true;
+    }
+  }
+  return false;
+}
+
 function updateCameraFollow() {
   // Offset no espaço local do carro: atrás (negativo em X), acima (Y)
   const localOffset = new THREE.Vector3(-15, 4, 0); // ajuste conforme necessário
@@ -267,5 +312,6 @@ function render()
   updateCameraFollow();
 
   requestAnimationFrame(render);
+  checkCarCollision();
   renderer.render(scene, camera) // Render scene
-}  
+}
