@@ -144,23 +144,40 @@
   // Função para criar o carro
   // ------------------------------------------------------
   function createCar() {
-    const boxGeometry = new THREE.BoxGeometry(4, 1, 2);
-    let carbox = new THREE.Mesh(boxGeometry, materialVermelho);
+  const hovercraft = new THREE.Group();
 
-    const baseGeometry = new THREE.CylinderGeometry(1, 1, 1, 32, 1, false, 0, Math.PI);
-    let carfront = new THREE.Mesh(baseGeometry, materialVermelho);
-    carfront.position.set(2.0, 0.0, 0);
+  // Base inflável (anel inferior mais fino)
+  const baseGeometry = new THREE.TorusGeometry(1.3, 0.25, 16, 32);
+  const base = new THREE.Mesh(baseGeometry, setDefaultMaterial('rgb(255, 100, 100)')); // vermelho claro
+  base.rotation.x = Math.PI / 2;
+  hovercraft.add(base);
 
-    const cabinGeometry = new THREE.CylinderGeometry(0.5, 0.75, 0.6, 8);
-    const cabin = new THREE.Mesh(cabinGeometry, materialVermelho);
-    cabin.position.set(1, 0.6, 0);
+  // Corpo central (cilindro mais fino e mais leve)
+  const bodyGeometry = new THREE.CylinderGeometry(1.2, 1.4, 0.8, 16);
+  const body = new THREE.Mesh(bodyGeometry, setDefaultMaterial('rgb(255, 0, 0)')); // vermelho principal
+  body.position.y = 0.55;
+  hovercraft.add(body);
 
-    scene.add(carbox);
-    carbox.add(cabin);
-    carbox.add(carfront);
-    carbox.position.set(-100.0, 0.5, -100.0);
-    return carbox;
-  }
+  // Cabine superior (menor e mais fina)
+  const cabineGeometry = new THREE.BoxGeometry(1.0, 0.5, 0.7);
+  const cabine = new THREE.Mesh(cabineGeometry, setDefaultMaterial('rgb(255, 255, 255)')); // branca
+  cabine.position.set(0, 1.0, 0);
+  hovercraft.add(cabine);
+
+  // Cone frontal (proa mais afilada)
+  const noseGeometry = new THREE.ConeGeometry(0.4, 1.0, 16);
+  const nose = new THREE.Mesh(noseGeometry, setDefaultMaterial('rgb(255, 0, 0)'));
+  nose.rotation.z = Math.PI / 2;
+  nose.position.set(1.7, 0.35, 0);
+  hovercraft.add(nose);
+
+  // Ajuste de posição inicial (como no seu código)
+  hovercraft.position.set(-100.0, 0.5, -100.0);
+
+  // Adiciona na cena
+  scene.add(hovercraft);
+  return hovercraft;
+}
 
   // ------------------------------------------------------
   // Função para criar as pistas e checkpoint visível (amarelo)
