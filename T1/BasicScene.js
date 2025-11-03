@@ -88,7 +88,7 @@ function createCar() {
   scene.add(carbox);
   carbox.add(cabin);
   carbox.add(carfront);
-  carbox.position.set(-90.0, 0.5, -50.0);
+  carbox.position.set(-90.0, 0.5, 0.0);
   return carbox;
 }
 
@@ -225,51 +225,56 @@ function updateCar(delta) {
 
 function checkCarCollision() {
   const carBB = new THREE.Box3().setFromObject(car);
-  const carDir = new THREE.Vector3(Math.cos(car.rotation.y), 0, -Math.sin(car.rotation.y)); // direção atual do carro
+  const carDir = new THREE.Vector3(Math.cos(car.rotation.y), 0, -Math.sin(car.rotation.y));
 
   for (const barreira of barreiras) {
     barreira.bb.setFromObject(barreira.mesh);
+
     if (carBB.intersectsBox(barreira.bb)) {
+      // --- Calcular sobreposição (profundidade) ---
+      const overlapX = Math.min(carBB.max.x, barreira.bb.max.x) - Math.max(carBB.min.x, barreira.bb.min.x);
+      const overlapZ = Math.min(carBB.max.z, barreira.bb.max.z) - Math.max(carBB.min.z, barreira.bb.min.z);
 
-      // Define vetor normal da barreira com base em seu formato (horizontal ou vertical)
-      const normal = new THREE.Vector3();
-      const size = new THREE.Vector3();
-      barreira.bb.getSize(size);
+      // Escolher eixo de menor penetração (mais correto fisicamente)
+      let push = new THREE.Vector3();
+      let normal = new THREE.Vector3();
 
-      // Barreiras longas no eixo Z têm normais ±X, no eixo X têm normais ±Z
-      if (size.z > size.x) {
-        normal.set(Math.sign(barreira.mesh.position.x), 0, 0);
+      if (overlapX < overlapZ) {
+        // empurrar no eixo X
+        if (car.position.x > barreira.mesh.position.x) normal.set(1, 0, 0);
+        else normal.set(-1, 0, 0);
+        push = normal.clone().multiplyScalar(overlapX);
       } else {
-        normal.set(0, 0, Math.sign(barreira.mesh.position.z));
+        // empurrar no eixo Z
+        if (car.position.z > barreira.mesh.position.z) normal.set(0, 0, 1);
+        else normal.set(0, 0, -1);
+        push = normal.clone().multiplyScalar(overlapZ);
       }
 
-      // Calcula o ângulo entre a direção do carro e a normal da barreira
+      // --- Calcular o ângulo entre a direção do carro e a normal da parede ---
       const angleRad = carDir.angleTo(normal);
       const angleDeg = THREE.MathUtils.radToDeg(angleRad);
 
-      // Calcula fator de redução: 1 para ≤90°, 0 para 180°
+      // --- Fator de redução de velocidade (gradativo após 90°) ---
       let reductionFactor = 1.0;
       if (angleDeg > 90) {
-        reductionFactor = 1 - (angleDeg - 90) / 90; // linear decay from 90°→180°
+        reductionFactor = 1.0 - (angleDeg - 90) / 90; // linear até 180°
         reductionFactor = Math.max(0, reductionFactor);
       }
 
-      // Reduz gradualmente a velocidade
+      // --- Aplicar correção de penetração e desaceleração ---
+      car.position.add(push);
       car.userData.speed *= reductionFactor;
 
-      // Corrige leve sobreposição empurrando o carro para trás um pouco
-      const pushBack = normal.clone().multiplyScalar(0.2 * (1 - reductionFactor));
-      car.position.add(pushBack);
-
-      console.log(
-        `💥 Colisão! Ângulo: ${angleDeg.toFixed(1)}°, Fator de redução: ${reductionFactor.toFixed(2)}`
-      );
+      // --- Se o ângulo for muito alto, zera velocidade ---
+      if (angleDeg >= 160) car.userData.speed = 0;
 
       return true;
     }
   }
   return false;
 }
+
 
 function updateCameraFollow() {
   // Offset no espaço local do carro: atrás (negativo em X), acima (Y)
