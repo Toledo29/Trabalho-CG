@@ -525,47 +525,79 @@ function keyboardUpdate() {
   // ------------------------------------------------------
   // Função de colisão (corrigida para pista em L)
   // ------------------------------------------------------
-  function checkCarCollision() {
-    const carBB = new THREE.Box3().setFromObject(car);
-    const carDir = new THREE.Vector3(Math.cos(car.rotation.y), 0, -Math.sin(car.rotation.y));
+  // ===========================================================
+// Função de colisão com barreiras (para pistas 1 e 2)
+// ===========================================================
+function checkCarCollision() {
+  const carBB = new THREE.Box3().setFromObject(car);
+  const carDir = new THREE.Vector3(Math.cos(car.rotation.y), 0, -Math.sin(car.rotation.y));
+  const allWalls = [...barreirasTrack1, ...barreirasTrack2];
 
-    // Usar apenas as barreiras da pista atual
-    const barreirasAtivas = currentTrack === 1 ? barreirasTrack1 : barreirasTrack2;
+  for (const { mesh, bb } of allWalls) {
+    bb.setFromObject(mesh);
 
-    for (const barreira of barreirasAtivas) {
-      barreira.bb.setFromObject(barreira.mesh);
-      if (carBB.intersectsBox(barreira.bb)) {
+    if (carBB.intersectsBox(bb)) {
+      // --- 1. Calcular profundidade de interseção (overlaps) ---
+      const overlapX = Math.min(carBB.max.x, bb.max.x) - Math.max(carBB.min.x, bb.min.x);
+      const overlapZ = Math.min(carBB.max.z, bb.max.z) - Math.max(carBB.min.z, bb.min.z);
 
-        const normal = new THREE.Vector3();
-        const size = new THREE.Vector3();
-        barreira.bb.getSize(size);
+      // --- 2. Determinar direção da correção ---
+      let normal = new THREE.Vector3();
+      let correction = new THREE.Vector3();
 
-        if (size.z > size.x) {
-          const dirX = car.position.x - barreira.mesh.position.x;
-          normal.set(Math.sign(dirX), 0, 0);
-        } else {
-          const dirZ = car.position.z - barreira.mesh.position.z;
-          normal.set(0, 0, Math.sign(dirZ));
-        }
-
-        const angleRad = carDir.angleTo(normal);
-        const angleDeg = THREE.MathUtils.radToDeg(angleRad);
-        let reductionFactor = 1.0;
-
-        if (angleDeg > 90) {
-          reductionFactor = 1 - (angleDeg - 90) / 90;
-          reductionFactor = Math.max(0, reductionFactor);
-        }
-
-        car.userData.speed *= reductionFactor;
-        const pushBack = normal.clone().multiplyScalar(0.6 * (1 - reductionFactor));
-        car.position.add(pushBack);
-
-        return true;
+      if (overlapX < overlapZ) {
+        if (car.position.x > mesh.position.x) normal.set(1, 0, 0);
+        else normal.set(-1, 0, 0);
+        correction.copy(normal).multiplyScalar(overlapX + 0.05); // leve margem de segurança
+      } else {
+        if (car.position.z > mesh.position.z) normal.set(0, 0, 1);
+        else normal.set(0, 0, -1);
+        correction.copy(normal).multiplyScalar(overlapZ + 0.05);
       }
+
+      // --- 3. Corrigir posição imediatamente (sem penetração) ---
+      car.position.add(correction);
+
+      // --- 4. Calcular ângulo entre direção e normal ---
+      const movementDir = carDir.clone().multiplyScalar(Math.sign(car.userData.speed));
+      const angleRad = movementDir.angleTo(normal);
+      const angleDeg = THREE.MathUtils.radToDeg(angleRad);
+
+      // --- 5. Redução gradativa da velocidade ---
+      let reductionFactor = 1.0;
+      if (angleDeg > 90) {
+        // Linear de 90° (sem perda) a 180° (parado)
+        reductionFactor = 1.0 - (angleDeg - 90) / 90;
+        reductionFactor = Math.max(0, reductionFactor);
+      }
+
+      // --- 6. Remover componente de velocidade normal à parede ---
+      const velocityDir = carDir.clone().multiplyScalar(car.userData.speed);
+      const normalComponent = normal.clone().multiplyScalar(velocityDir.dot(normal));
+      const tangentialComponent = velocityDir.clone().sub(normalComponent);
+
+      // Se o carro estiver empurrando a parede (de frente ou ré)
+      if (velocityDir.dot(normal) < 0) {
+        // Impede movimento na direção da parede
+        velocityDir.sub(normalComponent);
+      }
+
+      // --- 7. Atualiza velocidade (magnitude) considerando redução angular ---
+      const newSpeed = tangentialComponent.length() * reductionFactor;
+      car.userData.speed = Math.sign(car.userData.speed) * newSpeed;
+
+      // --- 8. Se o ângulo for quase frontal, parar completamente ---
+      if (angleDeg >= 170) car.userData.speed = 0;
+
+      // --- 9. Atualizar bounding box após correção ---
+      carBB.setFromObject(car);
+
+      return true;
     }
-    return false;
   }
+  return false;
+}
+
 
   // ------------------------------------------------------
   // Função de contagem de voltas
