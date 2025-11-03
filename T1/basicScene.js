@@ -505,7 +505,7 @@ function keyboardUpdate() {
   // ------------------------------------------------------
   // Atualização da posição do carro
   // ------------------------------------------------------
-  function updateCar(delta) {
+function updateCar(delta) {
     const carData = car.userData;
 
     if (moveDirection.forward) carData.speed += carData.accel * delta;
@@ -522,10 +522,8 @@ function keyboardUpdate() {
     car.translateX(carData.speed * delta);
   }
 
-  // ------------------------------------------------------
-  // Função de colisão (corrigida para pista em L)
-  // ------------------------------------------------------
-  // ===========================================================
+
+// ===========================================================
 // Função de colisão com barreiras (para pistas 1 e 2)
 // ===========================================================
 function checkCarCollision() {
