@@ -217,7 +217,7 @@
     track2.userData.checkpoint = checkpoint2;
 
   createGroundPlane(); // plano principal/chão
-  createWalls(); // barreiras invisíveis
+  createLWalls(); // barreiras invisíveis
   // createVisibleWalls(); // muretas visíveis - REMOVIDO
   }
 
@@ -358,19 +358,17 @@
   // Criação das barreiras invisíveis (pista quadrada + pista L)
   // ------------------------------------------------------
   function createWalls() {
-    const invisMaterial = new THREE.MeshBasicMaterial({ visible: false });
 
     const squareWalls = [
-      { geom: new THREE.BoxGeometry(5, 5, 200), pos: new THREE.Vector3(-102.5, 2.5, 0.0) },
-      { geom: new THREE.BoxGeometry(5, 5, 160), pos: new THREE.Vector3(-77.5, 2.5, 0.0) },
-      { geom: new THREE.BoxGeometry(5, 5, 200), pos: new THREE.Vector3(102.5, 2.5, 0.0) },
-      { geom: new THREE.BoxGeometry(5, 5, 160), pos: new THREE.Vector3(77.5, 2.5, 0.0) },
-      { geom: new THREE.BoxGeometry(200, 5, 5), pos: new THREE.Vector3(0.0, 2.5, 102.5) },
-      { geom: new THREE.BoxGeometry(160, 5, 5), pos: new THREE.Vector3(0.0, 2.5, 77.5) },
-      { geom: new THREE.BoxGeometry(200, 5, 5), pos: new THREE.Vector3(0.0, 2.5, -102.5) },
-      { geom: new THREE.BoxGeometry(160, 5, 5), pos: new THREE.Vector3(0.0, 2.5, -77.5) },
+      // { geom: new THREE.BoxGeometry(5, 5, 200), pos: new THREE.Vector3(-102.5, 2.5, 0.0) },
+      // { geom: new THREE.BoxGeometry(5, 5, 160), pos: new THREE.Vector3(-77.5, 2.5, 0.0) },
+      // { geom: new THREE.BoxGeometry(5, 5, 200), pos: new THREE.Vector3(102.5, 2.5, 0.0) },
+      // { geom: new THREE.BoxGeometry(5, 5, 160), pos: new THREE.Vector3(77.5, 2.5, 0.0) },
+      // { geom: new THREE.BoxGeometry(200, 5, 5), pos: new THREE.Vector3(0.0, 2.5, 102.5) },
+      // { geom: new THREE.BoxGeometry(160, 5, 5), pos: new THREE.Vector3(0.0, 2.5, 77.5) },
+      // { geom: new THREE.BoxGeometry(200, 5, 5), pos: new THREE.Vector3(0.0, 2.5, -102.5) },
+      // { geom: new THREE.BoxGeometry(160, 5, 5), pos: new THREE.Vector3(0.0, 2.5, -77.5) },
     ];
-
     // Barreiras da pista L - calculadas baseadas nos segmentos reais
     // Cada segmento: trackWidth = 20, então se estende ±10 do centro
     // Pontos de transição devem ter aberturas nas barreiras internas
@@ -397,78 +395,179 @@
     // 6. Vertical: x=-100(ext) a -80(int), z=-80 a -20
     
     const lWalls = [
-      // Barreiras EXTERNAS - bordas da pista
-      // Direita (x=100, externa do segmento 2)
-      { geom: new THREE.BoxGeometry(5, 5, 180), pos: new THREE.Vector3(102.5, 2.5, 10) },
+      // // Barreiras EXTERNAS - bordas da pista
+      // // Direita (x=100, externa do segmento 2)
+      // { geom: new THREE.BoxGeometry(5, 5, 180), pos: new THREE.Vector3(102.5, 2.5, 10) },
       
-      // Esquerda (x=-100, externa dos segmentos 6 e 4)
-      { geom: new THREE.BoxGeometry(5, 5, 60), pos: new THREE.Vector3(-102.5, 2.5, -50) }, // Parte inferior (segmento 6)
-      { geom: new THREE.BoxGeometry(5, 5, 100), pos: new THREE.Vector3(-102.5, 2.5, 30) }, // Parte superior (segmento 4)
+      // // Esquerda (x=-100, externa dos segmentos 6 e 4)
+      // { geom: new THREE.BoxGeometry(5, 5, 60), pos: new THREE.Vector3(-102.5, 2.5, -50) }, // Parte inferior (segmento 6)
+      // { geom: new THREE.BoxGeometry(5, 5, 100), pos: new THREE.Vector3(-102.5, 2.5, 30) }, // Parte superior (segmento 4)
       
-      // Superior (z=100, externa do segmento 3)
-      { geom: new THREE.BoxGeometry(100, 5, 5), pos: new THREE.Vector3(40, 2.5, 102.5) }, // Parte direita (x=-20 a 80)
-      { geom: new THREE.BoxGeometry(20, 5, 5), pos: new THREE.Vector3(-10, 2.5, 102.5) }, // Parte esquerda (x=-20 a 0)
+      // // Superior (z=100, externa do segmento 3)
+      // { geom: new THREE.BoxGeometry(100, 5, 5), pos: new THREE.Vector3(40, 2.5, 102.5) }, // Parte direita (x=-20 a 80)
+      // { geom: new THREE.BoxGeometry(20, 5, 5), pos: new THREE.Vector3(-10, 2.5, 102.5) }, // Parte esquerda (x=-20 a 0)
       
-      // Inferior (z=-100, externa do segmento 1)
-      { geom: new THREE.BoxGeometry(200, 5, 5), pos: new THREE.Vector3(0, 2.5, -102.5) },
+      // // Inferior (z=-100, externa do segmento 1)
+      // { geom: new THREE.BoxGeometry(200, 5, 5), pos: new THREE.Vector3(0, 2.5, -102.5) },
       
-      // Barreiras INTERNAS - bordas internas dos segmentos (áreas pretas)
-      // Bloqueiam as bordas internas mas deixam aberturas AMPLAS nas zonas de curva
+      // // Barreiras INTERNAS - bordas internas dos segmentos (áreas pretas)
+      // // Bloqueiam as bordas internas mas deixam aberturas AMPLAS nas zonas de curva
       
-      // CURVA 1: Segmento 1 ↔ Segmento 2 (primeira curva)
-      // Segmento 1 (horizontal inferior): barreira interna com aberturas nas curvas
-      { geom: new THREE.BoxGeometry(40, 5, 5), pos: new THREE.Vector3(-60, 2.5, -77.5) }, // Parte esquerda (x=-80 a -40, deixando abertura x=-100 a -80 para segmento 6 - AMPLIADA)
-      { geom: new THREE.BoxGeometry(50, 5, 5), pos: new THREE.Vector3(-5, 2.5, -77.5) }, // Parte central (x=-30 a 20)
-      { geom: new THREE.BoxGeometry(40, 5, 5), pos: new THREE.Vector3(40, 2.5, -77.5) }, // Parte direita (x=20 a 60)
-      // Aberturas ampliadas: x=-100 a -80 (segmento 6 - AINDA MAIS AMPLIADA) e x=60 a 100 (segmento 2) - SEM barreira em x=60-100
+      // // CURVA 1: Segmento 1 ↔ Segmento 2 (primeira curva)
+      // // Segmento 1 (horizontal inferior): barreira interna com aberturas nas curvas
+      // { geom: new THREE.BoxGeometry(40, 5, 5), pos: new THREE.Vector3(-60, 2.5, -77.5) }, // Parte esquerda (x=-80 a -40, deixando abertura x=-100 a -80 para segmento 6 - AMPLIADA)
+      // { geom: new THREE.BoxGeometry(50, 5, 5), pos: new THREE.Vector3(-5, 2.5, -77.5) }, // Parte central (x=-30 a 20)
+      // { geom: new THREE.BoxGeometry(40, 5, 5), pos: new THREE.Vector3(40, 2.5, -77.5) }, // Parte direita (x=20 a 60)
+      // // Aberturas ampliadas: x=-100 a -80 (segmento 6 - AINDA MAIS AMPLIADA) e x=60 a 100 (segmento 2) - SEM barreira em x=60-100
       
-      // Segmento 2 (vertical direita): barreira interna com abertura ampla na parte inferior
-      { geom: new THREE.BoxGeometry(5, 5, 120), pos: new THREE.Vector3(77.5, 2.5, 10) }, // Parte central (z=-50 a 70)
-      // Abertura ampla em z=-90 a -50 para entrada do segmento 1
-      // Abertura em z=70-100 para curva com segmento 3
+      // // Segmento 2 (vertical direita): barreira interna com abertura ampla na parte inferior
+      // { geom: new THREE.BoxGeometry(5, 5, 120), pos: new THREE.Vector3(77.5, 2.5, 10) }, // Parte central (z=-50 a 70)
+      // // Abertura ampla em z=-90 a -50 para entrada do segmento 1
+      // // Abertura em z=70-100 para curva com segmento 3
       
-      // CURVA 3: Segmento 3 ↔ Segmento 4 (terceira curva)
-      // Segmento 3 (horizontal superior): barreira interna com aberturas amplas
-      { geom: new THREE.BoxGeometry(60, 5, 5), pos: new THREE.Vector3(35, 2.5, 77.5) }, // Parte direita (x=10 a 80, deixando abertura x=-20 a 10 para segmento 4)
-      // Abertura ampliada: x=-20 a 10 (segmento 4) e também x=70-80 para curva com segmento 2
+      // // CURVA 3: Segmento 3 ↔ Segmento 4 (terceira curva)
+      // // Segmento 3 (horizontal superior): barreira interna com aberturas amplas
+      // { geom: new THREE.BoxGeometry(60, 5, 5), pos: new THREE.Vector3(35, 2.5, 77.5) }, // Parte direita (x=10 a 80, deixando abertura x=-20 a 10 para segmento 4)
+      // // Abertura ampliada: x=-20 a 10 (segmento 4) e também x=70-80 para curva com segmento 2
       
-      // Segmento 4 (vertical esquerda central): barreira interna com abertura ampla na parte superior
-      { geom: new THREE.BoxGeometry(5, 5, 50), pos: new THREE.Vector3(2.5, 2.5, 55) }, // Parte superior (z=30 a 80)
-      { geom: new THREE.BoxGeometry(5, 5, 10), pos: new THREE.Vector3(2.5, 2.5, -25) }, // Parte inferior (z=-30 a -20)
-      // Abertura ampla em z=-20 a 30 para entrada do segmento 3 (PERMITE ATRAVESSAR TODA A TERCEIRA RETA)
-      // Abertura em z=-20-0 para curva com segmento 5
+      // // Segmento 4 (vertical esquerda central): barreira interna com abertura ampla na parte superior
+      // { geom: new THREE.BoxGeometry(5, 5, 50), pos: new THREE.Vector3(2.5, 2.5, 55) }, // Parte superior (z=30 a 80)
+      // { geom: new THREE.BoxGeometry(5, 5, 10), pos: new THREE.Vector3(2.5, 2.5, -25) }, // Parte inferior (z=-30 a -20)
+      // // Abertura ampla em z=-20 a 30 para entrada do segmento 3 (PERMITE ATRAVESSAR TODA A TERCEIRA RETA)
+      // // Abertura em z=-20-0 para curva com segmento 5
       
-      // CURVA 5: Segmento 5 ↔ Segmento 6 (quinta curva)
-      // Segmento 5 (horizontal superior esquerda): barreira interna MUITO REDUZIDA para permitir passagem completa
-      { geom: new THREE.BoxGeometry(30, 5, 5), pos: new THREE.Vector3(-35, 2.5, -22.5) }, // Parte direita (x=-50 a -20, deixando abertura x=-100 a -50 para segmento 6 - MUITO AMPLIADA)
-      // Abertura muito ampliada: x=-100 a -50 (segmento 6 - PERMITE ATRAVESSAR TODA A QUINTA RETA) e x=-20-0 (segmento 4)
+      // // CURVA 5: Segmento 5 ↔ Segmento 6 (quinta curva)
+      // // Segmento 5 (horizontal superior esquerda): barreira interna MUITO REDUZIDA para permitir passagem completa
+      // { geom: new THREE.BoxGeometry(30, 5, 5), pos: new THREE.Vector3(-35, 2.5, -22.5) }, // Parte direita (x=-50 a -20, deixando abertura x=-100 a -50 para segmento 6 - MUITO AMPLIADA)
+      // // Abertura muito ampliada: x=-100 a -50 (segmento 6 - PERMITE ATRAVESSAR TODA A QUINTA RETA) e x=-20-0 (segmento 4)
       
-      // CURVA 6: Segmento 6 ↔ Segmento 1 (sexta curva)
-      // Segmento 6 (vertical esquerda inferior): barreira interna REMOVIDA na parte superior para permitir entrada livre do segmento 5
-      // SEM barreira na parte superior - abertura COMPLETA de z=-30 a -10 para entrada do segmento 5
-      { geom: new THREE.BoxGeometry(5, 5, 5), pos: new THREE.Vector3(-77.5, 2.5, -12.5) }, // Apenas parte superior muito pequena (z=-15 a -10)
-      // Abertura COMPLETA em z=-30 a -10 para entrada do segmento 5 (PERMITE ATRAVESSAR TODA A QUINTA RETA)
-      // Abertura COMPLETA em z=-90 a -30 para entrada do segmento 1 (PERMITE ATRAVESSAR TODA A SEXTA RETA)
+      // // CURVA 6: Segmento 6 ↔ Segmento 1 (sexta curva)
+      // // Segmento 6 (vertical esquerda inferior): barreira interna REMOVIDA na parte superior para permitir entrada livre do segmento 5
+      // // SEM barreira na parte superior - abertura COMPLETA de z=-30 a -10 para entrada do segmento 5
+      // { geom: new THREE.BoxGeometry(5, 5, 5), pos: new THREE.Vector3(-77.5, 2.5, -12.5) }, // Apenas parte superior muito pequena (z=-15 a -10)
+      // // Abertura COMPLETA em z=-30 a -10 para entrada do segmento 5 (PERMITE ATRAVESSAR TODA A QUINTA RETA)
+      // // Abertura COMPLETA em z=-90 a -30 para entrada do segmento 1 (PERMITE ATRAVESSAR TODA A SEXTA RETA)
     ];
+  }
 
-    // Criar barreiras da pista 1 (quadrada)
+  function createSquareWalls(){
+    const redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const squareWalls = [];
+    for (let i = 0; i < 20; i++) {
+      if (i % 2 === 0) {
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-100.5, 1, -95+(i*10)), mesh: redMaterial });
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(100.5, 1, -95+(i*10)), mesh: redMaterial }); //m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, -100.5), mesh: redMaterial }); // m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, 100.5), mesh: redMaterial });
+      }
+      else {
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-100.5, 1, -95+(i*10)), mesh: whiteMaterial });
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(100.5, 1, -95+(i*10)), mesh: whiteMaterial }); //m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, -100.5), mesh: whiteMaterial }); // m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, 100.5), mesh: whiteMaterial });
+      }
+    }
+    for (let i = 0; i < 16; i++) {
+      if (i % 2 === 0) {
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-80.5, 1, -75+(i*10)), mesh: redMaterial });
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(80.5, 1, -75+(i*10)), mesh: redMaterial }); //m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, -80.5), mesh: redMaterial }); //m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, 80.5), mesh: redMaterial });
+      }
+      else {
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-80.5, 1, -75+(i*10)), mesh: whiteMaterial });
+        squareWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(80.5, 1, -75+(i*10)), mesh: whiteMaterial }); //m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, -80.5), mesh: whiteMaterial }); //m
+        squareWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, 80.5), mesh: whiteMaterial });
+      }
+    }
+
     squareWalls.forEach(item => {
-      const mesh = new THREE.Mesh(item.geom, invisMaterial);
+      const mesh = new THREE.Mesh(item.geom, item.mesh);
       mesh.position.copy(item.pos);
       scene.add(mesh);
       const bb = new THREE.Box3().setFromObject(mesh);
       barreirasTrack1.push({ mesh, bb });
     });
+  };
 
-    // Criar barreiras da pista 2 (L)
-    lWalls.forEach(item => {
-      const mesh = new THREE.Mesh(item.geom, invisMaterial);
+  function createLWalls(){
+    const redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const LWalls = [];
+    for (let i = 0; i < 20; i++) {
+      if (i % 2 === 0) {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(100.5, 1, -95+(i*10)), mesh: redMaterial }); //m
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, -100.5), mesh: redMaterial }); // m
+      }
+      else {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(100.5, 1, -95+(i*10)), mesh: whiteMaterial }); //m
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, -100.5), mesh: whiteMaterial }); // m
+      }
+    }
+    for (let i = 0; i < 16; i++) {
+      if (i % 2 === 0) {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(80.5, 1, -75+(i*10)), mesh: redMaterial }); //m
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, -80.5), mesh: redMaterial }); //m
+      }
+      else {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(80.5, 1, -75+(i*10)), mesh: whiteMaterial }); //m
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, -80.5), mesh: whiteMaterial }); //m
+        
+      }
+    }
+    for( let i = 0; i < 10; i++) {
+      if (i % 2 === 0) {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-100.5, 1, -95+(i*10)), mesh: redMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-20.5, 1, 95-(i*10)), mesh: redMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-0.5, 1, 75-(i*10)), mesh: redMaterial }); 
+        
+      }
+      else {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-100.5, 1, -95+(i*10)), mesh: whiteMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-20.5, 1, 95-(i*10)), mesh: whiteMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-0.5, 1, 75-(i*10)), mesh: whiteMaterial }); 
+      }
+    }
+    for( let i = 0; i < 12; i++) {
+      if (i % 2 === 0) {
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(95-(i*10), 1, 100.5), mesh: redMaterial });
+      }
+      else {
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(95-(i*10), 1, 100.5), mesh: whiteMaterial });
+      }
+    }
+    for (let i = 0; i < 6; i++) {
+      if (i % 2 === 0) {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-80.5, 1, -75+(i*10)), mesh: redMaterial });
+      }
+      else {
+        LWalls.push({ geom: new THREE.BoxGeometry(1, 2.5, 10), pos: new THREE.Vector3(-80.5, 1, -75+(i*10)), mesh: whiteMaterial }); //m
+      }
+    }
+    for(let i = 0; i < 8; i++) {
+      if (i % 2 === 0) {
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(75-(i*10), 1, 80.5), mesh: redMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, 0.5), mesh: redMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, -20.5), mesh: redMaterial }); //
+        
+      }
+      else {
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(75-(i*10), 1, 80.5), mesh: whiteMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-95+(i*10), 1, 0.5), mesh: whiteMaterial });
+        LWalls.push({ geom: new THREE.BoxGeometry(10, 2.5, 1), pos: new THREE.Vector3(-75+(i*10), 1, -20.5), mesh: whiteMaterial }); //
+      }
+    }
+    LWalls.forEach(item => {
+      const mesh = new THREE.Mesh(item.geom, item.mesh);
       mesh.position.copy(item.pos);
       scene.add(mesh);
       const bb = new THREE.Box3().setFromObject(mesh);
       barreirasTrack2.push({ mesh, bb });
     });
-  }
+
+  };
 
   // ------------------------------------------------------
   // Função para reposicionar o carro
