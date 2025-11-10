@@ -1,6 +1,63 @@
 import * as THREE from 'three';
+import { resetCarPosition } from '../T1/Car.js';
+import { createWalls } from '../T1/Walls.js';
+import { createGroundPlane } from '../T1/Ground.js'
+import { scene,car } from '../T1/Scene.js'
+import { setDefaultMaterial,degreesToRadians} from "../libs/util/util.js";
 
-export function createSquareTrackElements(trackGroup, material) {
+// Material para piso da pista (cinza claro)
+const materialPista = setDefaultMaterial('rgba(138, 138, 138, 1)');
+
+let track1, track2; 
+let currentTrack = 1;
+
+// ------------------------------------------------------
+// Posições iniciais das pistas
+// ------------------------------------------------------
+const START_POS_TRACK1 = new THREE.Vector3(-80, 0.5, -90); 
+
+const START_POS_TRACK2 = new THREE.Vector3(-10, 0.5, -90); 
+
+export function createTrack() {
+    track1 = new THREE.Group();
+    createSquareTrackElements(track1, materialPista);
+
+    const checkpoint1 = new THREE.Mesh(
+        new THREE.PlaneGeometry(30, 40),
+        new THREE.MeshBasicMaterial({ color: 0xffff00 })
+    );
+    checkpoint1.rotation.x = degreesToRadians(-90);
+    checkpoint1.position.set(START_POS_TRACK1.x, 0.05, START_POS_TRACK1.z);
+    track1.add(checkpoint1);
+
+    track2 = new THREE.Group();
+    createLTrackElements(track2, materialPista);
+
+    const checkpoint2 = new THREE.Mesh(
+        new THREE.PlaneGeometry(30, 40),
+        new THREE.MeshBasicMaterial({ color: 0xffff00 })
+    );
+    checkpoint2.rotation.x = degreesToRadians(-90);
+    checkpoint2.position.set(START_POS_TRACK2.x, 0.05, START_POS_TRACK2.z);
+    track2.add(checkpoint2);
+
+    scene.add(track1);
+    scene.add(track2);
+
+    track1.visible = true;
+    track2.visible = false;
+    
+    resetCarPosition(currentTrack,car);
+
+    track1.userData.checkpoint = checkpoint1;
+    track2.userData.checkpoint = checkpoint2;
+
+  createGroundPlane(); // plano principal/chão
+  createWalls(); // barreiras invisíveis
+  // createVisibleWalls(); // muretas visíveis - REMOVIDO
+  }
+
+function createSquareTrackElements(trackGroup, material) {
     const trackWidth = 20; 
     let planeGeometryX = new THREE.PlaneGeometry(200, trackWidth, 10, 10);
     let planeGeometryZ = new THREE.PlaneGeometry(trackWidth, 200, 10, 10);
@@ -33,7 +90,7 @@ export function createSquareTrackElements(trackGroup, material) {
     trackGroup.add(plane4);
 }
 
-export function createLTrackElements(trackGroup, material) {
+function createLTrackElements(trackGroup, material) {
     const trackWidth = 20; 
     const segmentData = [
     { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, -0.1, -90) },
