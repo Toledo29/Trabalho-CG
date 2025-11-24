@@ -1,9 +1,9 @@
 // ------------------------------------------------------
 // Variáveis de voltas
 // ------------------------------------------------------
-export let currentLap = 0;
-export let passedFinishLine = false;
-export let gameFinished = false;
+export let currentLap = { value: 0 };
+export let passedFinishLine = { value: false };
+export let gameFinished = { value: false };
 
 
 // ------------------------------------------------------
