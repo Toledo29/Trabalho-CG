@@ -1,4 +1,5 @@
-
+import * as THREE from 'three';
+import { setDefaultMaterial } from '../libs/util/util.js';
 
 function createSquareWalls(){
     const redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
