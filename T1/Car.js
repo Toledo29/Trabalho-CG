@@ -2,10 +2,10 @@
 import * as THREE from 'three';
 import { setDefaultMaterial, degreesToRadians } from "../libs/util/util.js";
 
-export const START_POS_TRACK1 = new THREE.Vector3(-80, 0.5, -90);
+export const START_POS_TRACK1 = new THREE.Vector3(-40, 0.5, -90);
 export const START_ROT_TRACK1 = degreesToRadians(0);
 
-export const START_POS_TRACK2 = new THREE.Vector3(-10, 0.5, -90);
+export const START_POS_TRACK2 = new THREE.Vector3(-40, 0.5, -90);
 export const START_ROT_TRACK2 = degreesToRadians(0);
 
 export function createCar(scene) {

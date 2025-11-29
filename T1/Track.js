@@ -14,15 +14,56 @@ export function createTrack(scene, materialPista) {
   checkpoint1.position.set(START_POS_TRACK1.x, 0.05, START_POS_TRACK1.z);
   track1.add(checkpoint1);
 
-  track2 = new THREE.Group();
-  createLTrackElements(track2, materialPista);
   const checkpoint2 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
   checkpoint2.rotation.x = degreesToRadians(-90);
-  checkpoint2.position.set(START_POS_TRACK2.x, 0.05, START_POS_TRACK2.z);
-  track2.add(checkpoint2);
+  checkpoint2.position.set(90, 0.05, START_POS_TRACK1.z);
+  track1.add(checkpoint2);
+
+  const checkpoint3 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint3.rotation.x = degreesToRadians(-90);
+  checkpoint3.position.set(90, 0.05, 90);
+  track1.add(checkpoint3);
+
+  const checkpoint4 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint4.rotation.x = degreesToRadians(-90);
+  checkpoint4.position.set(-90, 0.05, 90);
+  track1.add(checkpoint4);
+
+  track2 = new THREE.Group();
+  createLTrackElements(track2, materialPista);
+  const checkpoint5 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint5.rotation.x = degreesToRadians(-90);
+  checkpoint5.position.set(START_POS_TRACK2.x, 0.05, START_POS_TRACK2.z);
+  track2.add(checkpoint5);
+  
+  const checkpoint6 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint6.rotation.x = degreesToRadians(-90);
+  checkpoint6.position.set(90, 0.05, START_POS_TRACK2.z);
+  track2.add(checkpoint6);
+
+  const checkpoint7 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint7.rotation.x = degreesToRadians(-90);
+  checkpoint7.position.set(90, 0.05, 90);
+  track2.add(checkpoint7);
+
+  const checkpoint8 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint8.rotation.x = degreesToRadians(-90);
+  checkpoint8.position.set(-5, 0.05, 90);
+  track2.add(checkpoint8);
+
+  const checkpoint9 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint9.rotation.x = degreesToRadians(-90);
+  checkpoint9.position.set(-10, 0.05, 0);
+  track2.add(checkpoint9);
+
+  const checkpoint10 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+  checkpoint10.rotation.x = degreesToRadians(-90);
+  checkpoint10.position.set(-90, 0.05, -10);
+  track2.add(checkpoint10);
+
 
   track1.userData.checkpoint = checkpoint1;
-  track2.userData.checkpoint = checkpoint2;
+  track2.userData.checkpoint = checkpoint5;
 
   scene.add(track1);
   scene.add(track2);
