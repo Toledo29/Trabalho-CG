@@ -1,97 +1,120 @@
 // Track.js
 import * as THREE from 'three';
 import { degreesToRadians } from "../libs/util/util.js";
-import { START_POS_TRACK1, START_POS_TRACK2 } from './Car.js';
+import { START_POS_TRACK1, START_POS_TRACK2, START_POS_TRACK3 } from './Car.js';
 
 export let track1 = null;
 export let track2 = null;
+export let track3 = null;
 
 export function createTrack(scene, materialPista) {
+
+  // ------------------------------------------------------------
+  // PISTA 1 — QUADRADA (ORIGINAL)
+  // ------------------------------------------------------------
   track1 = new THREE.Group();
   createSquareTrackElements(track1, materialPista);
-  const checkpoint1 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint1.rotation.x = degreesToRadians(-90);
-  checkpoint1.position.set(START_POS_TRACK1.x, 0.05, START_POS_TRACK1.z);
-  track1.add(checkpoint1);
 
-  const checkpoint2 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint2.rotation.x = degreesToRadians(-90);
-  checkpoint2.position.set(90, 0.05, START_POS_TRACK1.z);
-  track1.add(checkpoint2);
+  const checkpoint1 = makeCheckpoint(START_POS_TRACK1.x, START_POS_TRACK1.z);
+  const checkpoint2 = makeCheckpoint(90, START_POS_TRACK1.z);
+  const checkpoint3 = makeCheckpoint(90, 90);
+  const checkpoint4 = makeCheckpoint(-90, 90);
+  track1.add(checkpoint1, checkpoint2, checkpoint3, checkpoint4);
 
-  const checkpoint3 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint3.rotation.x = degreesToRadians(-90);
-  checkpoint3.position.set(90, 0.05, 90);
-  track1.add(checkpoint3);
 
-  const checkpoint4 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint4.rotation.x = degreesToRadians(-90);
-  checkpoint4.position.set(-90, 0.05, 90);
-  track1.add(checkpoint4);
-
+  // ------------------------------------------------------------
+  // PISTA 2 — EM L (ORIGINAL)
+  // ------------------------------------------------------------
   track2 = new THREE.Group();
   createLTrackElements(track2, materialPista);
-  const checkpoint5 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint5.rotation.x = degreesToRadians(-90);
-  checkpoint5.position.set(START_POS_TRACK2.x, 0.05, START_POS_TRACK2.z);
-  track2.add(checkpoint5);
-  
-  const checkpoint6 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint6.rotation.x = degreesToRadians(-90);
-  checkpoint6.position.set(90, 0.05, START_POS_TRACK2.z);
-  track2.add(checkpoint6);
 
-  const checkpoint7 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint7.rotation.x = degreesToRadians(-90);
-  checkpoint7.position.set(90, 0.05, 90);
-  track2.add(checkpoint7);
-
-  const checkpoint8 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint8.rotation.x = degreesToRadians(-90);
-  checkpoint8.position.set(-5, 0.05, 90);
-  track2.add(checkpoint8);
-
-  const checkpoint9 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint9.rotation.x = degreesToRadians(-90);
-  checkpoint9.position.set(-10, 0.05, 0);
-  track2.add(checkpoint9);
-
-  const checkpoint10 = new THREE.Mesh(new THREE.PlaneGeometry(30, 40), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
-  checkpoint10.rotation.x = degreesToRadians(-90);
-  checkpoint10.position.set(-90, 0.05, -10);
-  track2.add(checkpoint10);
+  const checkpoint5  = makeCheckpoint(START_POS_TRACK2.x, START_POS_TRACK2.z);
+  const checkpoint6  = makeCheckpoint(90, START_POS_TRACK2.z);
+  const checkpoint7  = makeCheckpoint(90, 90);
+  const checkpoint8  = makeCheckpoint(-5, 90);
+  const checkpoint9  = makeCheckpoint(-10, 0);
+  const checkpoint10 = makeCheckpoint(-90, -10);
+  track2.add(checkpoint5, checkpoint6, checkpoint7, checkpoint8, checkpoint9, checkpoint10);
 
 
+  // ------------------------------------------------------------
+  // PISTA 3 — 4 QUADRANTES (NOVA)
+  // ------------------------------------------------------------
+  track3 = new THREE.Group();
+  createFourQuadrantTrack(track3, materialPista);
+
+  const checkpoint11 = makeCheckpoint(START_POS_TRACK3.x, START_POS_TRACK3.z);
+  const checkpoint12 = makeCheckpoint(0, 90);
+  const checkpoint13 = makeCheckpoint(80, 15);
+  const checkpoint14 = makeCheckpoint(-75, 0);
+  track3.add(checkpoint11, checkpoint12, checkpoint13, checkpoint14);
+
+
+  // ------------------------------------------------------------
+  // ADD ao SCENE
+  // ------------------------------------------------------------
   track1.userData.checkpoint = checkpoint1;
   track2.userData.checkpoint = checkpoint5;
+  track3.userData.checkpoint = checkpoint11;
 
   scene.add(track1);
   scene.add(track2);
+  scene.add(track3);
 
   track1.visible = true;
   track2.visible = false;
+  track3.visible = false;
 }
 
+
+// =====================================================================
+// CHECKPOINT HELPERS
+// =====================================================================
+function makeCheckpoint(x, z) {
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(30, 40),
+    new THREE.MeshBasicMaterial({ color: 0xffff00 })
+  );
+  m.rotation.x = degreesToRadians(-90);
+  m.position.set(x, 0.05, z);
+  return m;
+}
+
+
+// =====================================================================
+// GEOMETRIA DA PISTA QUADRADA
+// =====================================================================
 export function createSquareTrackElements(trackGroup, material) {
   const trackWidth = 20;
-  let planeGeometryX = new THREE.PlaneGeometry(200, trackWidth, 10, 10);
-  let planeGeometryZ = new THREE.PlaneGeometry(trackWidth, 200, 10, 10);
-  let plane1 = new THREE.Mesh(planeGeometryX, material);
-  let plane2 = new THREE.Mesh(planeGeometryX, material);
-  let plane3 = new THREE.Mesh(planeGeometryZ, material);
-  let plane4 = new THREE.Mesh(planeGeometryZ, material);
-  plane1.receiveShadow = plane2.receiveShadow = plane3.receiveShadow = plane4.receiveShadow = true;
-  plane1.matrixAutoUpdate = plane2.matrixAutoUpdate = plane3.matrixAutoUpdate = plane4.matrixAutoUpdate = false;
-  let mat4 = new THREE.Matrix4();
-  plane1.matrix.identity().multiply(mat4.makeTranslation(0, -0.1, 90)).multiply(mat4.makeRotationX(degreesToRadians(-90)));
-  plane2.matrix.identity().multiply(mat4.makeTranslation(0, -0.1, -90)).multiply(mat4.makeRotationX(degreesToRadians(-90)));
-  plane3.matrix.identity().multiply(mat4.makeTranslation(-90, -0.1, 0)).multiply(mat4.makeRotationX(degreesToRadians(-90)));
-  plane4.matrix.identity().multiply(mat4.makeTranslation(90, -0.1, 0)).multiply(mat4.makeRotationX(degreesToRadians(-90)));
-  trackGroup.add(plane1); trackGroup.add(plane2); trackGroup.add(plane3); trackGroup.add(plane4);
+
+  const gX = new THREE.PlaneGeometry(200, trackWidth);
+  const gZ = new THREE.PlaneGeometry(trackWidth, 200);
+
+  const p1 = new THREE.Mesh(gX, material);
+  const p2 = new THREE.Mesh(gX, material);
+  const p3 = new THREE.Mesh(gZ, material);
+  const p4 = new THREE.Mesh(gZ, material);
+
+  let rot = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
+
+  p1.matrixAutoUpdate = p2.matrixAutoUpdate = false;
+  p3.matrixAutoUpdate = p4.matrixAutoUpdate = false;
+
+  p1.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(0, -0.1, 90)).multiply(rot);
+  p2.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(0, -0.1, -90)).multiply(rot);
+  p3.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(-90, -0.1, 0)).multiply(rot);
+  p4.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(90, -0.1, 0)).multiply(rot);
+
+  trackGroup.add(p1, p2, p3, p4);
 }
 
+
+// =====================================================================
+// GEOMETRIA DA PISTA EM L
+// =====================================================================
 export function createLTrackElements(trackGroup, material) {
   const trackWidth = 20;
+
   const segmentData = [
     { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, -0.1, -90) },
     { length: 180, isHorizontal: false, pos: new THREE.Vector3(90, -0.1, 10) },
@@ -100,16 +123,54 @@ export function createLTrackElements(trackGroup, material) {
     { length: 80, isHorizontal: true, pos: new THREE.Vector3(-60, -0.1, -10) },
     { length: 60, isHorizontal: false, pos: new THREE.Vector3(-90, -0.1, -50) },
   ];
-  let mat4Rotation = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
-  segmentData.forEach(item => {
-    let geometry = item.isHorizontal ? new THREE.PlaneGeometry(item.length, trackWidth, 10, 10) : new THREE.PlaneGeometry(trackWidth, item.length, 10, 10);
-    let mesh = new THREE.Mesh(geometry, material);
-    mesh.receiveShadow = true;
+
+  let rot = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
+
+  segmentData.forEach(s => {
+    let geo = s.isHorizontal
+      ? new THREE.PlaneGeometry(s.length, trackWidth)
+      : new THREE.PlaneGeometry(trackWidth, s.length);
+
+    let mesh = new THREE.Mesh(geo, material);
     mesh.matrixAutoUpdate = false;
-    mesh.matrix.identity();
-    let mat4Translation = new THREE.Matrix4().makeTranslation(item.pos.x, item.pos.y, item.pos.z);
-    mesh.matrix.multiply(mat4Translation);
-    mesh.matrix.multiply(mat4Rotation);
+    mesh.matrix.identity()
+      .multiply(new THREE.Matrix4().makeTranslation(s.pos.x, s.pos.y, s.pos.z))
+      .multiply(rot);
+
+    trackGroup.add(mesh);
+  });
+}
+
+
+// =====================================================================
+// GEOMETRIA DA PISTA 3 — 4 QUADRANTES
+// =====================================================================
+export function createFourQuadrantTrack(trackGroup, material) {
+
+  const trackWidth = 20;
+
+  const segmentData = [
+    { length: 100, isHorizontal: true, pos: new THREE.Vector3(-40, -0.1, -90) },
+    { length: 200, isHorizontal: false, pos: new THREE.Vector3(0, -0.1, 0) },
+    { length: 180, isHorizontal: true, pos: new THREE.Vector3(0, -0.1, 10) },
+    { length: 60, isHorizontal: false, pos: new THREE.Vector3(80, -0.1, 50) },
+    { length: 100, isHorizontal: true, pos: new THREE.Vector3(40, -0.1, 90) },
+    { length: 80, isHorizontal: false, pos: new THREE.Vector3(-80, -0.1, -40) },
+  ];
+
+  let rot = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
+
+  segmentData.forEach(s => {
+    let geo = s.isHorizontal
+      ? new THREE.PlaneGeometry(s.length, trackWidth)
+      : new THREE.PlaneGeometry(trackWidth, s.length);
+
+    let mesh = new THREE.Mesh(geo, material);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrix.identity()
+      .multiply(new THREE.Matrix4().makeTranslation(s.pos.x, s.pos.y, s.pos.z))
+      .multiply(rot);
+
     trackGroup.add(mesh);
   });
 }

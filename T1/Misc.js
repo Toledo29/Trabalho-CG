@@ -5,41 +5,61 @@ import * as THREE from 'three';
 export let lapCount = 0;
 export const MAX_LAPS = 4;
 
-// -------------------------------------------------------------
-// PISTA 1  (já FUNCIONAVA — mantida 100% igual)
-// -------------------------------------------------------------
+// ============================================================
+// CHECKPOINTS — PISTA 1
+// ============================================================
 export const checkpointsTrack1 = [
   { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP1
-  { pos: new THREE.Vector3(90, 1, -90), radius: 20 },  // CP2
-  { pos: new THREE.Vector3(90, 1, 90), radius: 20 },   // CP3
-  { pos: new THREE.Vector3(-40, 1, 90), radius: 20 }   // CP4
+  { pos: new THREE.Vector3(90, 1, -90),  radius: 20 }, // CP2
+  { pos: new THREE.Vector3(90, 1, 90),   radius: 20 }, // CP3
+  { pos: new THREE.Vector3(-40, 1, 90),  radius: 20 }  // CP4
 ];
 
 let expectedIndex1 = 0;
 let sequenceComplete1 = false;
 const checkpointInside1 = [false, false, false, false];
 
-// -------------------------------------------------------------
-// PISTA 2 (L) — agora com a mesma lógica da pista 1
-// -------------------------------------------------------------
+// ============================================================
+// CHECKPOINTS — PISTA 2 (L)
+// ============================================================
 export const checkpointsTrack2 = [
   { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP5 - início
-  { pos: new THREE.Vector3(90, 1, -90), radius: 20 },  // CP6
-  { pos: new THREE.Vector3(90, 1, 90), radius: 20 },   // CP7
-  { pos: new THREE.Vector3(-5, 1, 90), radius: 20 },   // CP8
-  { pos: new THREE.Vector3(-10, 1, 0), radius: 20 },   // CP9
-  { pos: new THREE.Vector3(-90, 1, -10), radius: 20 }, // CP10
+  { pos: new THREE.Vector3(90, 1, -90),  radius: 20 }, // CP6
+  { pos: new THREE.Vector3(90, 1, 90),   radius: 20 }, // CP7
+  { pos: new THREE.Vector3(-5,  1, 90),  radius: 20 }, // CP8
+  { pos: new THREE.Vector3(-10, 1, 0),   radius: 20 }, // CP9
+  { pos: new THREE.Vector3(-90, 1, -10), radius: 20 }  // CP10
 ];
 
 let expectedIndex2 = 0;
 let sequenceComplete2 = false;
 const checkpointInside2 = [false, false, false, false, false, false];
 
-// -------------------------------------------------------------
+// ============================================================
+// CHECKPOINTS — PISTA 3 (4 QUADRANTES)
+// ============================================================
+export const checkpointsTrack3 = [
+  { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP11 - início
+  { pos: new THREE.Vector3(0,   1, 90),  radius: 20 }, // CP12
+  { pos: new THREE.Vector3(80,  1, 15),  radius: 20 }, // CP13
+  { pos: new THREE.Vector3(-75, 1, 0),   radius: 20 }  // CP14
+];
+
+let expectedIndex3 = 0;
+let sequenceComplete3 = false;
+const checkpointInside3 = [false, false, false, false];
+
+// ============================================================
+// game over flag
+// ============================================================
+let gameOver = false;
+
+// ============================================================
 // RESET GERAL
-// -------------------------------------------------------------
+// ============================================================
 export function resetLapSystem() {
   lapCount = 0;
+  gameOver = false;
 
   // pista 1
   expectedIndex1 = 0;
@@ -50,12 +70,20 @@ export function resetLapSystem() {
   expectedIndex2 = 0;
   sequenceComplete2 = false;
   for (let i = 0; i < checkpointInside2.length; i++) checkpointInside2[i] = false;
+
+  // pista 3
+  expectedIndex3 = 0;
+  sequenceComplete3 = false;
+  for (let i = 0; i < checkpointInside3.length; i++) checkpointInside3[i] = false;
 }
 
-// -------------------------------------------------------------
-// Função genérica que ambas as pistas usam — mesmo algoritmo
-// -------------------------------------------------------------
+// ============================================================
+// FUNÇÃO GENÉRICA DE PROCESSAMENTO
+// - retorna { expectedIndex, sequenceComplete, lapText }
+// ============================================================
 function processLap(car, checkpoints, expectedIndex, sequenceComplete, insideFlags) {
+  // se já terminou o jogo, não processa mais
+  if (gameOver) return { expectedIndex, sequenceComplete, lapText: null };
 
   const idxToCheck = sequenceComplete ? 0 : expectedIndex;
   const cp = checkpoints[idxToCheck];
@@ -67,7 +95,6 @@ function processLap(car, checkpoints, expectedIndex, sequenceComplete, insideFla
   if (isInside && !insideFlags[idxToCheck]) {
     insideFlags[idxToCheck] = true;
 
-    // ainda acumulando sequência
     if (!sequenceComplete) {
       expectedIndex++;
 
@@ -80,16 +107,23 @@ function processLap(car, checkpoints, expectedIndex, sequenceComplete, insideFla
       return { expectedIndex, sequenceComplete, lapText: null };
     }
 
-    // já completou sequência e entrou novamente no CP inicial
-    lapCount++;
+    // sequenceComplete === true e entrou no CP inicial -> conta volta
+    lapCount = Math.min(lapCount + 1, MAX_LAPS);
 
+    // se chegou ao max, marca game over e retorna mensagem final
+    if (lapCount >= MAX_LAPS) {
+      gameOver = true;
+      return { expectedIndex: checkpoints.length - 1, sequenceComplete: false, lapText: `Fim de jogo` };
+    }
+
+    // caso ainda não tenha atingido MAX_LAPS, prepara próxima volta
     sequenceComplete = false;
-    expectedIndex = 1;
+    expectedIndex = 1; // já passou CP1 agora, próximo é CP2
 
     return { expectedIndex, sequenceComplete, lapText: `Volta: ${lapCount} / ${MAX_LAPS}` };
   }
 
-  // EXIT
+  // EXIT (sair do checkpoint) — limpa flag para permitir re-trigger
   if (!isInside && insideFlags[idxToCheck]) {
     insideFlags[idxToCheck] = false;
   }
@@ -97,37 +131,33 @@ function processLap(car, checkpoints, expectedIndex, sequenceComplete, insideFla
   return { expectedIndex, sequenceComplete, lapText: null };
 }
 
-// -------------------------------------------------------------
-// Função principal chamada no render()
-// -------------------------------------------------------------
+// ============================================================
+// FUNÇÃO CHAMADA NO RENDER()
+// ============================================================
 export function checkLapCount(car, currentTrack) {
-  if (currentTrack === 1) {
-    // roda lógica da pista 1
-    const res = processLap(
-      car,
-      checkpointsTrack1,
-      expectedIndex1,
-      sequenceComplete1,
-      checkpointInside1
-    );
+  if (gameOver) {
+    // quando game over, sempre devolve a mensagem (caso queira manter HUD)
+    return `Fim de jogo`;
+  }
 
+  if (currentTrack === 1) {
+    const res = processLap(car, checkpointsTrack1, expectedIndex1, sequenceComplete1, checkpointInside1);
     expectedIndex1 = res.expectedIndex;
     sequenceComplete1 = res.sequenceComplete;
     return res.lapText;
   }
 
   if (currentTrack === 2) {
-    // roda lógica da pista 2
-    const res = processLap(
-      car,
-      checkpointsTrack2,
-      expectedIndex2,
-      sequenceComplete2,
-      checkpointInside2
-    );
-
+    const res = processLap(car, checkpointsTrack2, expectedIndex2, sequenceComplete2, checkpointInside2);
     expectedIndex2 = res.expectedIndex;
     sequenceComplete2 = res.sequenceComplete;
+    return res.lapText;
+  }
+
+  if (currentTrack === 3) {
+    const res = processLap(car, checkpointsTrack3, expectedIndex3, sequenceComplete3, checkpointInside3);
+    expectedIndex3 = res.expectedIndex;
+    sequenceComplete3 = res.sequenceComplete;
     return res.lapText;
   }
 
