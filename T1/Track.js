@@ -28,6 +28,7 @@ export function createTrack(scene, car) {
   checkpoint1.rotation.x = degreesToRadians(-90);
   checkpoint1.position.set(START_POS_TRACK1.x, 0.05, START_POS_TRACK1.z);
   track1.add(checkpoint1);
+  track1.receiveShadow = true;
 
   track2 = new THREE.Group();
   createLTrackElements(track2, materialPista);
@@ -39,6 +40,7 @@ export function createTrack(scene, car) {
   checkpoint2.rotation.x = degreesToRadians(-90);
   checkpoint2.position.set(START_POS_TRACK2.x, 0.05, START_POS_TRACK2.z);
   track2.add(checkpoint2);
+  track2.receiveShadow = true;
 
   scene.add(track1);
   scene.add(track2);

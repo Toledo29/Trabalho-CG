@@ -4,8 +4,9 @@ import KeyboardState from '../libs/util/KeyboardState.js';
 import { createCar, updateCar } from './Car.js';
 import { createTrack } from './Track.js';
 import { updateCameraFollow } from './Camera.js';
+import { initRenderer } from './Renderer.js';
+import { initLight, updateLightFollow } from './Light.js';
 import {
-  initRenderer,
   initDefaultBasicLight,
   InfoBox,
   SecondaryBox,
@@ -18,15 +19,25 @@ import {
 // ------------------------------------------------------
 const MAX_LAPS = 2;
 export let scene = new THREE.Scene();
-const renderer = initRenderer();
-const light = initDefaultBasicLight(scene);
 scene.background = new THREE.Color(0x87CEEB); // céu azul
+
+// ------------------------------------------------------
+// Inincialização do renderizador
+// ------------------------------------------------------
+
+const renderer = initRenderer();
 
 // ------------------------------------------------------
 // Criação do carro e pista
 // ------------------------------------------------------
 const car = createCar();
 const { barreirasTrack1, barreirasTrack2 } = createTrack(scene, car);
+
+// ------------------------------------------------------
+// Criação da iluminação
+// ------------------------------------------------------
+
+const dirLight = initLight(scene, car);
 
 // ------------------------------------------------------
 // Câmera e HUD
@@ -138,6 +149,7 @@ function render() {
   updateCar(delta, moveDirection);
   checkCarCollision();
   updateCameraFollow(camera, car, moveDirection);
+  updateLightFollow(car, dirLight);
 
   speedBox.changeMessage(`Velocidade: ${car.userData.speed.toFixed(0)}`);
   requestAnimationFrame(render);

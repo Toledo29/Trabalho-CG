@@ -56,7 +56,11 @@ export function createCar() {
     maxReverseSpeed: -20.0,
     turnSpeed: THREE.MathUtils.degToRad(120),
   };
-
+  base.castShadow = true;
+  body.castShadow = true;
+  cabine.castShadow = true;
+  nose.castShadow = true;
+  car.castShadow = true;
   scene.add(car);
   return car;
 }
