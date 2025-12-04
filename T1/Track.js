@@ -77,7 +77,7 @@ function createSquareTrackElements(trackGroup, material) {
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;
     mesh.matrix.identity()
-      .multiply(mat4.makeTranslation(tx, -0.1, tz))
+      .multiply(mat4.makeTranslation(tx, 0, tz)) // y=0 para alinhar com o carro
       .multiply(mat4.makeRotationX(degreesToRadians(-90)));
     trackGroup.add(mesh);
   };
@@ -96,12 +96,12 @@ function createLTrackElements(trackGroup, material) {
   const mat4Rotation = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
 
   const segmentData = [
-    { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, -0.1, -90) },
-    { length: 180, isHorizontal: false, pos: new THREE.Vector3(90, -0.1, 10) },
-    { length: 100, isHorizontal: true, pos: new THREE.Vector3(30, -0.1, 90) },
-    { length: 100, isHorizontal: false, pos: new THREE.Vector3(-10, -0.1, 30) },
-    { length: 80, isHorizontal: true, pos: new THREE.Vector3(-60, -0.1, -10) },
-    { length: 60, isHorizontal: false, pos: new THREE.Vector3(-90, -0.1, -50) },
+    { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, 0, -90) },
+    { length: 180, isHorizontal: false, pos: new THREE.Vector3(90, 0, 10) },
+    { length: 100, isHorizontal: true, pos: new THREE.Vector3(30, 0, 90) },
+    { length: 100, isHorizontal: false, pos: new THREE.Vector3(-10, 0, 30) },
+    { length: 80, isHorizontal: true, pos: new THREE.Vector3(-60, 0, -10) },
+    { length: 60, isHorizontal: false, pos: new THREE.Vector3(-90, 0, -50) },
   ];
 
   segmentData.forEach(item => {

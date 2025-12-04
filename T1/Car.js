@@ -46,7 +46,7 @@ export function createCar() {
   nose.position.set(1.7, 0.35, 0);
   car.add(nose);
 
-  car.position.set(-100.0, 0.5, -100.0);
+  car.position.set(-100.0, 0, -100.0);
   car.userData = {
     speed: 0,
     accel: 17.0,
@@ -57,10 +57,15 @@ export function createCar() {
     turnSpeed: THREE.MathUtils.degToRad(120),
   };
   base.castShadow = true;
+  base.receiveShadow = true;
   body.castShadow = true;
+  body.receiveShadow = true;
   cabine.castShadow = true;
+  cabine.receiveShadow = true;
   nose.castShadow = true;
+  nose.receiveShadow = true;
   car.castShadow = true;
+  car.receiveShadow = true;
   scene.add(car);
   return car;
 }
