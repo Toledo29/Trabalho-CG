@@ -10,7 +10,8 @@ import {
   onWindowResize
 } from "../libs/util/util.js";
 
-import { createCar, resetCarPosition, updateCar } from './Car.js';
+// ADIÇÃO: importei createEnemyCar
+import { createCar, createEnemyCar, resetCarPosition, updateCar } from './Car.js';
 import { createTrack, track1, track2, track3 } from './Track.js';
 
 import {
@@ -49,9 +50,11 @@ const materialChao = setDefaultMaterial('rgb(34,139,34)');
 export let currentTrack = 1;
 
 // ------------------------------------------------------------
-// CAR
+// CAR (PLAYER) e INIMIGO
 // ------------------------------------------------------------
 export const car = createCar(scene);
+// enemyCar criado, mas sem IA por enquanto — só para existir na cena
+export const enemyCar = createEnemyCar ? createEnemyCar(scene) : null;
 
 // ------------------------------------------------------------
 // CAMERA
@@ -113,7 +116,7 @@ controls.add("* Seta ↑ / X para acelerar");
 controls.add("* Seta ↓ para frear");
 controls.add("* Tecla 1 = Pista Quadrada");
 controls.add("* Tecla 2 = Pista L");
-controls.add("* Tecla 3 = Pista 3 (nova)");
+controls.add("* Tecla 3 = Pista Formato em 8");
 controls.show();
 
 // ------------------------------------------------------------
@@ -164,7 +167,8 @@ function keyboardUpdate() {
     groupLWalls.visible = false;
     groupThirdWalls.visible = false;
 
-    resetCarPosition(car, 1);
+    resetCarPosition(car,enemyCar, 1);
+    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
   }
@@ -181,7 +185,8 @@ function keyboardUpdate() {
     groupLWalls.visible = true;
     groupThirdWalls.visible = false;
 
-    resetCarPosition(car, 2);
+    resetCarPosition(car,enemyCar, 2);
+    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
   }
@@ -198,7 +203,8 @@ function keyboardUpdate() {
     groupLWalls.visible = false;
     groupThirdWalls.visible = true;
 
-    resetCarPosition(car, 3);
+    resetCarPosition(car,enemyCar, 3);
+    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
   }
@@ -270,6 +276,7 @@ function render() {
 
   const delta = clock.getDelta();
   updateCar(car, delta, moveDirection);
+  // NOTE: por enquanto não há IA/controle do enemyCar — atualize depois se quiser
   updateCameraFollow(camera, car, moveDirection);
 
   checkCollision(currentTrack);
@@ -286,5 +293,5 @@ function render() {
 // ------------------------------------------------------------
 // INIT
 // ------------------------------------------------------------
-resetCarPosition(car, 1);
+resetCarPosition(car, enemyCar, 1);
 render();

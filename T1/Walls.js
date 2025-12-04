@@ -165,7 +165,7 @@ export function createLWalls(scene) {
 }
 
 /* ============================================================
-   PISTA 3 — CÓPIA DA PISTA 2 (para você editar depois)
+   PISTA 3 — Formato em 8
 ============================================================ */
 export function createThirdWalls(scene) {
   groupThirdWalls.clear();
@@ -208,7 +208,7 @@ export function createThirdWalls(scene) {
   for (let i = 0; i < 6; i++) {
     const isRed = i % 2 === 0;
     addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-65 + i * 10, 1, -80.5), isRed);
-    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(15.5 + i * 10, 1, 20.5), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(15.5 + i * 10, 1, 19.5), isRed);
     addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-65 + i * 10, 1, -0.5), isRed);
     addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(65 - i * 10, 1, 80.5), isRed);
     addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(10, 1, 75 - i * 10), isRed);

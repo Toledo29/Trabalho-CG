@@ -31,8 +31,8 @@ export function createTrack(scene, materialPista) {
   const checkpoint5  = makeCheckpoint(START_POS_TRACK2.x, START_POS_TRACK2.z);
   const checkpoint6  = makeCheckpoint(90, START_POS_TRACK2.z);
   const checkpoint7  = makeCheckpoint(90, 90);
-  const checkpoint8  = makeCheckpoint(-5, 90);
-  const checkpoint9  = makeCheckpoint(-10, 0);
+  const checkpoint8  = makeCheckpoint(-10, 90);
+  const checkpoint9  = makeCheckpoint(-10, -10);
   const checkpoint10 = makeCheckpoint(-90, -10);
   track2.add(checkpoint5, checkpoint6, checkpoint7, checkpoint8, checkpoint9, checkpoint10);
 
@@ -45,8 +45,8 @@ export function createTrack(scene, materialPista) {
 
   const checkpoint11 = makeCheckpoint(START_POS_TRACK3.x, START_POS_TRACK3.z);
   const checkpoint12 = makeCheckpoint(0, 90);
-  const checkpoint13 = makeCheckpoint(80, 15);
-  const checkpoint14 = makeCheckpoint(-75, 0);
+  const checkpoint13 = makeCheckpoint(80, 10);
+  const checkpoint14 = makeCheckpoint(-80, 10);
   track3.add(checkpoint11, checkpoint12, checkpoint13, checkpoint14);
 
 
@@ -72,7 +72,7 @@ export function createTrack(scene, materialPista) {
 // =====================================================================
 function makeCheckpoint(x, z) {
   const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(30, 40),
+    new THREE.PlaneGeometry(20, 20),
     new THREE.MeshBasicMaterial({ color: 0xffff00 })
   );
   m.rotation.x = degreesToRadians(-90);
