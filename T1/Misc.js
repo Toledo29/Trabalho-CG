@@ -1,59 +1,165 @@
-// ------------------------------------------------------
-// Variáveis de voltas
-// ------------------------------------------------------
-export let currentLap = { value: 0 };
-export let passedFinishLine = { value: false };
-export let gameFinished = { value: false };
+// Misc.js
+import * as THREE from 'three';
 
+// contador de voltas e limite
+export let lapCount = 0;
+export const MAX_LAPS = 4;
 
-// ------------------------------------------------------
-// Atualização do teclado e troca de pista
-// ------------------------------------------------------
-export function keyboardUpdate() {
-  keyboard.update();
+// ============================================================
+// CHECKPOINTS — PISTA 1
+// ============================================================
+export const checkpointsTrack1 = [
+  { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP1
+  { pos: new THREE.Vector3(90, 1, -90),  radius: 20 }, // CP2
+  { pos: new THREE.Vector3(90, 1, 90),   radius: 20 }, // CP3
+  { pos: new THREE.Vector3(-40, 1, 90),  radius: 20 }  // CP4
+];
 
-  moveDirection.forward = keyboard.pressed("up") || keyboard.pressed("X");
-  moveDirection.backward = keyboard.pressed("down");
-  moveDirection.left = keyboard.pressed("left");
-  moveDirection.right = keyboard.pressed("right");
+let expectedIndex1 = 0;
+let sequenceComplete1 = false;
+const checkpointInside1 = [false, false, false, false];
 
-  if (keyboard.down("1") && currentTrack !== 1) {
-      currentTrack = 1;
-      track1.visible = true;
-      track2.visible = false;
-      resetCarPosition(1);
-  } 
-  else if (keyboard.down("2") && currentTrack !== 2) {
-      currentTrack = 2;
-      track1.visible = false;
-      track2.visible = true;
-      resetCarPosition(2);
-  }
+// ============================================================
+// CHECKPOINTS — PISTA 2 (L)
+// ============================================================
+export const checkpointsTrack2 = [
+  { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP5 - início
+  { pos: new THREE.Vector3(90, 1, -90),  radius: 20 }, // CP6
+  { pos: new THREE.Vector3(90, 1, 90),   radius: 20 }, // CP7
+  { pos: new THREE.Vector3(-5,  1, 90),  radius: 20 }, // CP8
+  { pos: new THREE.Vector3(-10, 1, 0),   radius: 20 }, // CP9
+  { pos: new THREE.Vector3(-90, 1, -10), radius: 20 }  // CP10
+];
+
+let expectedIndex2 = 0;
+let sequenceComplete2 = false;
+const checkpointInside2 = [false, false, false, false, false, false];
+
+// ============================================================
+// CHECKPOINTS — PISTA 3 (4 QUADRANTES)
+// ============================================================
+export const checkpointsTrack3 = [
+  { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP11 - início
+  { pos: new THREE.Vector3(0,   1, 90),  radius: 20 }, // CP12
+  { pos: new THREE.Vector3(80,  1, 15),  radius: 20 }, // CP13
+  { pos: new THREE.Vector3(-75, 1, 0),   radius: 20 }  // CP14
+];
+
+let expectedIndex3 = 0;
+let sequenceComplete3 = false;
+const checkpointInside3 = [false, false, false, false];
+
+// ============================================================
+// game over flag
+// ============================================================
+let gameOver = false;
+
+// ============================================================
+// RESET GERAL
+// ============================================================
+export function resetLapSystem() {
+  lapCount = 0;
+  gameOver = false;
+
+  // pista 1
+  expectedIndex1 = 0;
+  sequenceComplete1 = false;
+  for (let i = 0; i < checkpointInside1.length; i++) checkpointInside1[i] = false;
+
+  // pista 2
+  expectedIndex2 = 0;
+  sequenceComplete2 = false;
+  for (let i = 0; i < checkpointInside2.length; i++) checkpointInside2[i] = false;
+
+  // pista 3
+  expectedIndex3 = 0;
+  sequenceComplete3 = false;
+  for (let i = 0; i < checkpointInside3.length; i++) checkpointInside3[i] = false;
 }
 
- // ------------------------------------------------------
-// Função de contagem de voltas
-// ------------------------------------------------------
-export function checkLapCount(lap) {
-    if (gameFinished) return;
+// ============================================================
+// FUNÇÃO GENÉRICA DE PROCESSAMENTO
+// - retorna { expectedIndex, sequenceComplete, lapText }
+// ============================================================
+function processLap(car, checkpoints, expectedIndex, sequenceComplete, insideFlags) {
+  // se já terminou o jogo, não processa mais
+  if (gameOver) return { expectedIndex, sequenceComplete, lapText: null };
 
-    const checkpoint = currentTrack === 1 ? track1.userData.checkpoint : track2.userData.checkpoint;
-    if (!checkpoint) return;
+  const idxToCheck = sequenceComplete ? 0 : expectedIndex;
+  const cp = checkpoints[idxToCheck];
 
-    const carBox = new THREE.Box3().setFromObject(car);
-    const checkpointBox = new THREE.Box3().setFromObject(checkpoint);
+  const dist = car.position.distanceTo(cp.pos);
+  const isInside = dist < cp.radius;
 
-    if (carBox.intersectsBox(checkpointBox)) {
-        if (!passedFinishLine) passedFinishLine = true;
-    } else {
-        if (passedFinishLine) {
-        passedFinishLine = false;
-        currentLap++;
-        lapDiv.innerText = "Volta: " + currentLap + " / " + lap;
-        if (currentLap >= lap) {
-            gameFinished = true;
-            lapDiv.innerText = "FIM DE JOGO! 🏁";
-        }
-        }
+  // ENTER
+  if (isInside && !insideFlags[idxToCheck]) {
+    insideFlags[idxToCheck] = true;
+
+    if (!sequenceComplete) {
+      expectedIndex++;
+
+      // completou todos → agora precisa voltar ao CP inicial
+      if (expectedIndex >= checkpoints.length) {
+        sequenceComplete = true;
+        expectedIndex = checkpoints.length - 1;
+      }
+
+      return { expectedIndex, sequenceComplete, lapText: null };
     }
+
+    // sequenceComplete === true e entrou no CP inicial -> conta volta
+    lapCount = Math.min(lapCount + 1, MAX_LAPS);
+
+    // se chegou ao max, marca game over e retorna mensagem final
+    if (lapCount >= MAX_LAPS) {
+      gameOver = true;
+      return { expectedIndex: checkpoints.length - 1, sequenceComplete: false, lapText: `Fim de jogo` };
+    }
+
+    // caso ainda não tenha atingido MAX_LAPS, prepara próxima volta
+    sequenceComplete = false;
+    expectedIndex = 1; // já passou CP1 agora, próximo é CP2
+
+    return { expectedIndex, sequenceComplete, lapText: `Volta: ${lapCount} / ${MAX_LAPS}` };
+  }
+
+  // EXIT (sair do checkpoint) — limpa flag para permitir re-trigger
+  if (!isInside && insideFlags[idxToCheck]) {
+    insideFlags[idxToCheck] = false;
+  }
+
+  return { expectedIndex, sequenceComplete, lapText: null };
+}
+
+// ============================================================
+// FUNÇÃO CHAMADA NO RENDER()
+// ============================================================
+export function checkLapCount(car, currentTrack) {
+  if (gameOver) {
+    // quando game over, sempre devolve a mensagem (caso queira manter HUD)
+    return `Fim de jogo`;
+  }
+
+  if (currentTrack === 1) {
+    const res = processLap(car, checkpointsTrack1, expectedIndex1, sequenceComplete1, checkpointInside1);
+    expectedIndex1 = res.expectedIndex;
+    sequenceComplete1 = res.sequenceComplete;
+    return res.lapText;
+  }
+
+  if (currentTrack === 2) {
+    const res = processLap(car, checkpointsTrack2, expectedIndex2, sequenceComplete2, checkpointInside2);
+    expectedIndex2 = res.expectedIndex;
+    sequenceComplete2 = res.sequenceComplete;
+    return res.lapText;
+  }
+
+  if (currentTrack === 3) {
+    const res = processLap(car, checkpointsTrack3, expectedIndex3, sequenceComplete3, checkpointInside3);
+    expectedIndex3 = res.expectedIndex;
+    sequenceComplete3 = res.sequenceComplete;
+    return res.lapText;
+  }
+
+  return null;
 }

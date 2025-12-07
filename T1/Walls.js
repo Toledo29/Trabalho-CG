@@ -1,126 +1,236 @@
+// Walls.js
 import * as THREE from 'three';
-import { setDefaultMaterial } from '../libs/util/util.js';
 
+export const barreirasTrack1 = [];
+export const barreirasTrack2 = [];
+export const barreirasTrack3 = [];  // <<< paredes da pista 3
 
-export function createWalls(scene, trackType = 1) {
-  const wallMaterial = setDefaultMaterial('rgb(255, 255, 0)');
-  const wallSize = 5; // tamanho de cada bloco cúbico da mureta
-  const wallHeight = 5;
+export const groupSquareWalls = new THREE.Group();
+export const groupLWalls      = new THREE.Group();
+export const groupThirdWalls  = new THREE.Group(); // <<< grupo da pista 3
 
-  const cubeGeometry = new THREE.BoxGeometry(wallSize, wallHeight, wallSize);
-  const barreiras = [];
+/**
+ * Cria bloco branco/vermelho com bounding box
+ */
+function makeBlock(geom, pos, isRed) {
+  const mat = new THREE.MeshBasicMaterial({
+    color: isRed ? 0xff0000 : 0xffffff
+  });
 
-  let buildComplete = false;
-  let colorSwitch = true; // alterna entre branco e preto
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.position.copy(pos);
+  mesh.castShadow = true;
 
-  while (!buildComplete) {
-    if (trackType === 1) {
-      // === PISTA QUADRADA ===
-      // Cria blocos ao redor de um quadrado 200x200 (mesma escala da pista)
-      const range = 100;
-      const step = wallSize;
-      const wallY = wallHeight / 2;
+  const bb = new THREE.Box3().setFromObject(mesh);
+  return { mesh, bb };
+}
 
-     // --- paredes horizontais (superior e inferior) ---
-      for (let x = -range; x <= range; x += step) {
-        const color = colorSwitch ? 'white' : 'black';
-        const material = setDefaultMaterial(color);
-        colorSwitch = !colorSwitch;
+/* ============================================================
+   PISTA 1 — QUADRADA
+============================================================ */
+export function createSquareWalls(scene) {
+  groupSquareWalls.clear();
+  barreirasTrack1.length = 0;
 
-        const top = new THREE.Mesh(cubeGeometry, material);
-        top.position.set(x, wallY, range + step / 2);
-        scene.add(top);
-        barreiras.push({ mesh: top, bb: new THREE.Box3().setFromObject(top) });
+  // externas grandes
+  for (let i = 0; i < 20; i++) {
+    const isRed = (i % 2 === 1);
 
-        const bottom = new THREE.Mesh(cubeGeometry, material);
-        bottom.position.set(x, wallY, -range - step / 2);
-        scene.add(bottom);
-        barreiras.push({ mesh: bottom, bb: new THREE.Box3().setFromObject(bottom) });
-      }
-
-      // --- paredes verticais (direita e esquerda) ---
-      for (let z = -range; z <= range; z += step) {
-        const color = colorSwitch ? 'white' : 'black';
-        const material = setDefaultMaterial(color);
-        colorSwitch = !colorSwitch;
-
-        const left = new THREE.Mesh(cubeGeometry, material);
-        left.position.set(-range - step / 2, wallY, z);
-        scene.add(left);
-        barreiras.push({ mesh: left, bb: new THREE.Box3().setFromObject(left) });
-
-        const right = new THREE.Mesh(cubeGeometry, material);
-        right.position.set(range + step / 2, wallY, z);
-        scene.add(right);
-        barreiras.push({ mesh: right, bb: new THREE.Box3().setFromObject(right) });
-      }
-
-      buildComplete = true;
+    // esquerda
+    {
+      const b = makeBlock(
+        new THREE.BoxGeometry(1, 2.5, 10),
+        new THREE.Vector3(-100.5, 1, -95 + i * 10),
+        isRed
+      );
+      groupSquareWalls.add(b.mesh);
+      barreirasTrack1.push(b);
     }
 
-    else if (trackType === 2) {
-      // === PISTA EM L ===
-      const step = wallSize;
-      const wallY = wallHeight / 2;
-      const range = 100;
-
-       // Parte inferior (horizontal)
-      for (let x = -range; x <= range; x += step) {
-        const color = colorSwitch ? 'white' : 'black';
-        const material = setDefaultMaterial(color);
-        colorSwitch = !colorSwitch;
-
-        const cube = new THREE.Mesh(cubeGeometry, material);
-        cube.position.set(x, wallY, -range - step / 2);
-        scene.add(cube);
-        barreiras.push({ mesh: cube, bb: new THREE.Box3().setFromObject(cube) });
-      }
-
-      // Lateral direita (vertical)
-      for (let z = -range; z <= range; z += step) {
-        const color = colorSwitch ? 'white' : 'black';
-        const material = setDefaultMaterial(color);
-        colorSwitch = !colorSwitch;
-
-        const cube = new THREE.Mesh(cubeGeometry, material);
-        cube.position.set(range + step / 2, wallY, z);
-        scene.add(cube);
-        barreiras.push({ mesh: cube, bb: new THREE.Box3().setFromObject(cube) });
-      }
-
-     // Parte superior (horizontal, esquerda)
-      for (let x = -range; x <= 0; x += step) {
-        const color = colorSwitch ? 'white' : 'black';
-        const material = setDefaultMaterial(color);
-        colorSwitch = !colorSwitch;
-
-        const cube = new THREE.Mesh(cubeGeometry, material);
-        cube.position.set(x, wallY, range + step / 2);
-        scene.add(cube);
-        barreiras.push({ mesh: cube, bb: new THREE.Box3().setFromObject(cube) });
-      }
-
-      // Lateral esquerda (vertical)
-      for (let z = -20; z <= range; z += step) {
-        const color = colorSwitch ? 'white' : 'black';
-        const material = setDefaultMaterial(color);
-        colorSwitch = !colorSwitch;
-
-        const cube = new THREE.Mesh(cubeGeometry, material);
-        cube.position.set(-range - step / 2, wallY, z);
-        scene.add(cube);
-        barreiras.push({ mesh: cube, bb: new THREE.Box3().setFromObject(cube) });
-      }
-
-      buildComplete = true;
+    // direita
+    {
+      const b = makeBlock(
+        new THREE.BoxGeometry(1, 2.5, 10),
+        new THREE.Vector3(100.5, 1, -95 + i * 10),
+        isRed
+      );
+      groupSquareWalls.add(b.mesh);
+      barreirasTrack1.push(b);
     }
 
-    // Caso trackType inválido
-    else {
-      console.warn("⚠️ Tipo de pista inválido em createWalls(). Use 1 (quadrada) ou 2 (L).");
-      buildComplete = true;
+    // topo e baixo
+    {
+      const geom = new THREE.BoxGeometry(10, 2.5, 1);
+
+      const bA = makeBlock(geom, new THREE.Vector3(-95 + i * 10, 1, -100.5), isRed);
+      const bB = makeBlock(geom, new THREE.Vector3(-95 + i * 10, 1, 100.5), isRed);
+
+      groupSquareWalls.add(bA.mesh, bB.mesh);
+      barreirasTrack1.push(bA, bB);
     }
   }
 
-  return { barreiras };
+  // internas (se necessário manter como antes)
+  for (let i = 0; i < 16; i++) {
+    const isRed = (i % 2 === 1);
+
+    // laterais internas
+    {
+      const geom = new THREE.BoxGeometry(1, 2.5, 10);
+
+      const posL = new THREE.Vector3(-80.5, 1, -75 + i * 10);
+      const posR = new THREE.Vector3(80.5, 1, -75 + i * 10);
+
+      const bL = makeBlock(geom, posL, isRed);
+      const bR = makeBlock(geom, posR, isRed);
+
+      groupSquareWalls.add(bL.mesh, bR.mesh);
+      barreirasTrack1.push(bL, bR);
+    }
+
+    // topo / inferior internos
+    {
+      const geom = new THREE.BoxGeometry(10, 2.5, 1);
+
+      const posA = new THREE.Vector3(-75 + i * 10, 1, -80.5);
+      const posB = new THREE.Vector3(-75 + i * 10, 1, 80.5);
+
+      const bA = makeBlock(geom, posA, isRed);
+      const bB = makeBlock(geom, posB, isRed);
+
+      groupSquareWalls.add(bA.mesh, bB.mesh);
+      barreirasTrack1.push(bA, bB);
+    }
+  }
+
+  if (scene) scene.add(groupSquareWalls);
+}
+
+/* ============================================================
+   PISTA 2 — EM L
+============================================================ */
+export function createLWalls(scene) {
+  groupLWalls.clear();
+  barreirasTrack2.length = 0;
+
+  function addBlock(geom, pos, isRed) {
+    const b = makeBlock(geom, pos, isRed);
+    groupLWalls.add(b.mesh);
+    barreirasTrack2.push(b);
+  }
+
+  // === Segmentos da pista L (mantidos do seu código original) ===
+  for (let i = 0; i < 20; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(100.5, 1, -95 + i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-95 + i * 10, 1, -100.5), isRed);
+  }
+
+  for (let i = 0; i < 16; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(80.5, 1, -75 + i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-75 + i * 10, 1, -80.5), isRed);
+  }
+
+  for (let i = 0; i < 10; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-100.5, 1, -95 + i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-20.5, 1, 95 - i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-0.5, 1, 75 - i * 10), isRed);
+  }
+
+  for (let i = 0; i < 12; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(95 - i * 10, 1, 100.5), isRed);
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-80.5, 1, -75 + i * 10), isRed);
+  }
+
+  for (let i = 0; i < 8; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(75 - i * 10, 1, 80.5), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-95 + i * 10, 1, 0.5), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-75 + i * 10, 1, -20.5), isRed);
+  }
+
+  for (let i = 0; i < 9; i++) {
+    const isRed = i % 2 === 1;
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(100.5, 1, 95 - i * 10), isRed);
+  }
+
+  if (scene) scene.add(groupLWalls);
+}
+
+/* ============================================================
+   PISTA 3 — Formato em 8
+============================================================ */
+export function createThirdWalls(scene) {
+  groupThirdWalls.clear();
+  barreirasTrack3.length = 0;
+
+  function addBlock(geom, pos, isRed) {
+    const b = makeBlock(geom, pos, isRed);
+    groupThirdWalls.add(b.mesh);
+    barreirasTrack3.push(b);
+  }
+
+  // === COPIADO DA PISTA 2 ===
+  for (let i = 0; i < 11; i++) {
+    const isRed = i % 2 === 0;
+    
+    
+  }
+
+  for (let i = 0; i < 7; i++) {
+    const isRed = i % 2 === 0;
+    
+    
+  }
+
+  for (let i = 0; i < 10; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(10, 1, -95 + i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(90.5, 1, 95 - i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(85 - i * 10, 1, 100.5), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-85 + i * 10, 1, -100.5), isRed);
+    
+  }
+
+  for (let i = 0; i < 12; i++) {
+    const isRed = i % 2 === 0;
+   
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-90.5, 1, -95 + i * 10), isRed);
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const isRed = i % 2 === 0;
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-65 + i * 10, 1, -80.5), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(15.5 + i * 10, 1, 19.5), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-65 + i * 10, 1, -0.5), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(65 - i * 10, 1, 80.5), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(10, 1, 75 - i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(70.5, 1, 25 + i * 10), isRed);
+  }
+
+  for (let i = 0; i < 8; i++) {
+    const isRed = i % 2 === 0;
+    
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(-85 + i * 10, 1, 20.5), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-10.5, 1, 95 - i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-70.5, 1, -75 + i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(1, 2.5, 10), new THREE.Vector3(-10.5, 1, -75 + i * 10), isRed);
+    addBlock(new THREE.BoxGeometry(10, 2.5, 1), new THREE.Vector3(15.5 + i * 10, 1, -0.5), isRed);
+  
+  }
+
+  for (let i = 0; i < 9; i++) {
+    const isRed = i % 2 === 1;
+    
+    
+  }
+
+  if (scene) scene.add(groupThirdWalls);
 }

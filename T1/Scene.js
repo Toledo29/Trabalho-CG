@@ -1,94 +1,227 @@
 // Scene.js
 import * as THREE from 'three';
 import KeyboardState from '../libs/util/KeyboardState.js';
-import { createCar, updateCar } from './Car.js';
-import { createTrack } from './Track.js';
-import { updateCameraFollow } from './Camera.js';
 import {
   initRenderer,
   initDefaultBasicLight,
+  setDefaultMaterial,
   InfoBox,
   SecondaryBox,
-  onWindowResize,
-  degreesToRadians
+  onWindowResize
 } from "../libs/util/util.js";
 
-// ------------------------------------------------------
-// Variáveis principais
-// ------------------------------------------------------
-const MAX_LAPS = 2;
-export let scene = new THREE.Scene();
-const renderer = initRenderer();
-const light = initDefaultBasicLight(scene);
-scene.background = new THREE.Color(0x87CEEB); // céu azul
+// ADIÇÃO: importei createEnemyCar
+import { createCar, createEnemyCar, resetCarPosition, updateCar } from './Car.js';
+import { createTrack, track1, track2, track3 } from './Track.js';
 
-// ------------------------------------------------------
-// Criação do carro e pista
-// ------------------------------------------------------
-const car = createCar();
-const { barreirasTrack1, barreirasTrack2 } = createTrack(scene, car);
+import {
+  createSquareWalls,
+  createLWalls,
+  createThirdWalls,
+  groupSquareWalls,
+  groupLWalls,
+  groupThirdWalls,
+  barreirasTrack1,
+  barreirasTrack2,
+  barreirasTrack3
+} from './Walls.js';
 
-// ------------------------------------------------------
-// Câmera e HUD
-// ------------------------------------------------------
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+import { createGroundPlane } from './Ground.js';
+import { updateCameraFollow } from './Camera.js';
+import { checkLapCount, resetLapSystem, MAX_LAPS } from './Misc.js';
+
+// ------------------------------------------------------------
+// SCENE / LIGHT
+// ------------------------------------------------------------
+export const scene = new THREE.Scene();
+export const renderer = initRenderer();
+initDefaultBasicLight(scene);
+scene.background = new THREE.Color(0x87CEEB);
+
+// ------------------------------------------------------------
+// MATERIALS
+// ------------------------------------------------------------
+const materialPista = setDefaultMaterial('rgb(200,200,200)');
+const materialChao = setDefaultMaterial('rgb(34,139,34)');
+
+// ------------------------------------------------------------
+// STATE
+// ------------------------------------------------------------
+export let currentTrack = 1;
+
+// ------------------------------------------------------------
+// CAR (PLAYER) e INIMIGO
+// ------------------------------------------------------------
+export const car = createCar(scene);
+// enemyCar criado, mas sem IA por enquanto — só para existir na cena
+export const enemyCar = createEnemyCar ? createEnemyCar(scene) : null;
+
+// ------------------------------------------------------------
+// CAMERA
+// ------------------------------------------------------------
+export const camera = new THREE.PerspectiveCamera(
+  45,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+
 camera.position.set(car.position.x - 15, car.position.y + 4, car.position.z);
 camera.up.set(0, 1, 0);
 camera.lookAt(car.position);
 scene.add(camera);
 
-window.addEventListener('resize', () => onWindowResize(camera, renderer), false);
-
+// ------------------------------------------------------------
+// HUD – Velocidade
+// ------------------------------------------------------------
 const speedBox = new SecondaryBox("");
-speedBox.changeMessage(`Velocidade: ${car.userData.speed.toFixed(0)}`);
+speedBox.changeMessage("Velocidade: " + Number(car.userData.speed).toFixed(0));
 
-export const lapDiv = document.createElement("div");
+// ------------------------------------------------------------
+// HUD – Voltas
+// ------------------------------------------------------------
+const lapDiv = document.createElement("div");
 lapDiv.id = "lap-counter";
-lapDiv.style.cssText = `
-  position: absolute; right: 20px; bottom: 20px;
-  padding: 6px 10px; background: rgba(0,0,0,0.6);
-  color: white; border-radius: 6px; z-index: 9999;
-  font-family: Arial, sans-serif; font-size: 14px;
-`;
-lapDiv.innerText = `Volta: 0 / ${MAX_LAPS}`;
+lapDiv.style.position = "absolute";
+lapDiv.style.right = "20px";
+lapDiv.style.bottom = "20px";
+lapDiv.style.padding = "6px 10px";
+lapDiv.style.background = "rgba(0,0,0,0.6)";
+lapDiv.style.color = "white";
+lapDiv.style.borderRadius = "6px";
+lapDiv.style.zIndex = "9999";
+lapDiv.style.fontFamily = "Arial";
+lapDiv.style.fontSize = "14px";
+lapDiv.style.textAlign = "right";
+lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
 document.body.appendChild(lapDiv);
 
-// ------------------------------------------------------
-// Controles e variáveis de movimento
-// ------------------------------------------------------
+// ------------------------------------------------------------
+// KEYBOARD
+// ------------------------------------------------------------
+window.addEventListener('resize', () => onWindowResize(camera, renderer), false);
 const keyboard = new KeyboardState();
 const clock = new THREE.Clock();
-
 const moveDirection = { forward: false, backward: false, left: false, right: false };
 
-function keyboardUpdate() {
-  keyboard.update();
-  moveDirection.forward = keyboard.pressed("W") || keyboard.pressed("ArrowUp");
-  moveDirection.backward = keyboard.pressed("S") || keyboard.pressed("ArrowDown");
-  moveDirection.left = keyboard.pressed("A") || keyboard.pressed("ArrowLeft");
-  moveDirection.right = keyboard.pressed("D") || keyboard.pressed("ArrowRight");
-}
-
-// ------------------------------------------------------
-// InfoBox
-// ------------------------------------------------------
-let controls = new InfoBox();
-controls.infoBox.style.bottom = "";
-controls.infoBox.style.top = "0";
+// ------------------------------------------------------------
+// INFOBOX
+// ------------------------------------------------------------
+const controls = new InfoBox();
+controls.infoBox.style.top = "0px";
 controls.add("Car Race");
 controls.addParagraph();
-controls.add("* Setas ou WASD para controlar o carro.");
+controls.add("* Seta ← → para girar");
+controls.add("* Seta ↑ / X para acelerar");
+controls.add("* Seta ↓ para frear");
+controls.add("* Tecla 1 = Pista Quadrada");
+controls.add("* Tecla 2 = Pista L");
+controls.add("* Tecla 3 = Pista Formato em 8");
 controls.show();
 
-// ------------------------------------------------------
-// Função de colisão entre carro e barreiras
-// ------------------------------------------------------
-function checkCarCollision() {
+// ------------------------------------------------------------
+// CREATE WORLD
+// ------------------------------------------------------------
+createTrack(scene, materialPista);
+createGroundPlane(scene, materialChao);
+
+// Walls creation
+createSquareWalls();
+createLWalls();
+createThirdWalls();
+
+// Add groups to scene
+scene.add(groupSquareWalls);
+scene.add(groupLWalls);
+scene.add(groupThirdWalls);
+
+// Initial visibility
+groupSquareWalls.visible = true;
+groupLWalls.visible = false;
+groupThirdWalls.visible = false;
+
+track1.visible = true;
+track2.visible = false;
+track3.visible = false;
+
+// ------------------------------------------------------------
+// KEYBOARD UPDATE
+// ------------------------------------------------------------
+function keyboardUpdate() {
+  keyboard.update();
+
+  moveDirection.forward  = keyboard.pressed("up") || keyboard.pressed("X");
+  moveDirection.backward = keyboard.pressed("down");
+  moveDirection.left     = keyboard.pressed("left");
+  moveDirection.right    = keyboard.pressed("right");
+
+  // TRACK 1
+  if (keyboard.down("1") && currentTrack !== 1) {
+    currentTrack = 1;
+
+    track1.visible = true;
+    track2.visible = false;
+    track3.visible = false;
+
+    groupSquareWalls.visible = true;
+    groupLWalls.visible = false;
+    groupThirdWalls.visible = false;
+
+    resetCarPosition(car,enemyCar, 1);
+    
+    resetLapSystem();
+    lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+  }
+
+  // TRACK 2
+  if (keyboard.down("2") && currentTrack !== 2) {
+    currentTrack = 2;
+
+    track1.visible = false;
+    track2.visible = true;
+    track3.visible = false;
+
+    groupSquareWalls.visible = false;
+    groupLWalls.visible = true;
+    groupThirdWalls.visible = false;
+
+    resetCarPosition(car,enemyCar, 2);
+    
+    resetLapSystem();
+    lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+  }
+
+  // TRACK 3 (NOVA)
+  if (keyboard.down("3") && currentTrack !== 3) {
+    currentTrack = 3;
+
+    track1.visible = false;
+    track2.visible = false;
+    track3.visible = true;
+
+    groupSquareWalls.visible = false;
+    groupLWalls.visible = false;
+    groupThirdWalls.visible = true;
+
+    resetCarPosition(car,enemyCar, 3);
+    
+    resetLapSystem();
+    lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+  }
+}
+
+// ------------------------------------------------------------
+// COLLISIONS
+// ------------------------------------------------------------
+function checkCollision(track) {
   const carBB = new THREE.Box3().setFromObject(car);
   const carDir = new THREE.Vector3(Math.cos(car.rotation.y), 0, -Math.sin(car.rotation.y));
-  const allWalls = [...barreirasTrack1, ...barreirasTrack2];
 
-  for (const { mesh, bb } of allWalls) {
+  const list = track === 1 ? barreirasTrack1 :
+              track === 2 ? barreirasTrack2 :
+                             barreirasTrack3;  // pista 3 usa paredes da 3
+
+  for (const { mesh, bb } of list) {
     bb.setFromObject(mesh);
 
     if (carBB.intersectsBox(bb)) {
@@ -110,38 +243,55 @@ function checkCarCollision() {
 
       const movementDir = carDir.clone().multiplyScalar(Math.sign(car.userData.speed));
       const angleDeg = THREE.MathUtils.radToDeg(movementDir.angleTo(normal));
-      let reductionFactor = angleDeg > 90 ? 1 - (angleDeg - 90) / 90 : 1;
-      reductionFactor = Math.max(0, reductionFactor);
+
+      let reductionFactor = 1.0;
+      if (angleDeg > 90) {
+        reductionFactor = 1.0 - (angleDeg - 90) / 90;
+        reductionFactor = Math.max(0, reductionFactor);
+      }
 
       const velocityDir = carDir.clone().multiplyScalar(car.userData.speed);
-      const normalComp = normal.clone().multiplyScalar(velocityDir.dot(normal));
-      const tangentComp = velocityDir.clone().sub(normalComp);
+      const normalComponent = normal.clone().multiplyScalar(velocityDir.dot(normal));
+      const tangentialComponent = velocityDir.clone().sub(normalComponent);
 
-      if (velocityDir.dot(normal) < 0) velocityDir.sub(normalComp);
-      const newSpeed = tangentComp.length() * reductionFactor;
+      if (velocityDir.dot(normal) < 0) velocityDir.sub(normalComponent);
+
+      const newSpeed = tangentialComponent.length() * reductionFactor;
       car.userData.speed = Math.sign(car.userData.speed) * newSpeed;
 
       if (angleDeg >= 170) car.userData.speed = 0;
-      carBB.setFromObject(car);
+
       return true;
     }
   }
+
   return false;
 }
 
-// ------------------------------------------------------
-// Render loop
-// ------------------------------------------------------
+// ------------------------------------------------------------
+// MAIN LOOP
+// ------------------------------------------------------------
 function render() {
   keyboardUpdate();
+
   const delta = clock.getDelta();
-  updateCar(delta, moveDirection);
-  checkCarCollision();
+  updateCar(car, delta, moveDirection);
+  // NOTE: por enquanto não há IA/controle do enemyCar — atualize depois se quiser
   updateCameraFollow(camera, car, moveDirection);
 
-  speedBox.changeMessage(`Velocidade: ${car.userData.speed.toFixed(0)}`);
+  checkCollision(currentTrack);
+
+  const lapText = checkLapCount(car, currentTrack);
+  if (lapText !== null) lapDiv.innerText = lapText;
+
+  speedBox.changeMessage("Velocidade: " + Number(car.userData.speed).toFixed(0));
+
   requestAnimationFrame(render);
   renderer.render(scene, camera);
 }
 
+// ------------------------------------------------------------
+// INIT
+// ------------------------------------------------------------
+resetCarPosition(car, enemyCar, 1);
 render();
