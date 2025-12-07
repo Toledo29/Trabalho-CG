@@ -4,7 +4,6 @@ import KeyboardState from '../libs/util/KeyboardState.js';
 import { initRenderer } from './Renderer.js';
 import { initLight, updateLightFollow } from './Light.js';
 import {
-  initDefaultBasicLight,
   setDefaultMaterial,
   InfoBox,
   SecondaryBox,
@@ -32,11 +31,9 @@ import { updateCameraFollow } from './Camera.js';
 import { checkLapCount, resetLapSystem, MAX_LAPS } from './Misc.js';
 
 // ------------------------------------------------------------
-// SCENE / LIGHT
+// SCENE
 // ------------------------------------------------------------
 export const scene = new THREE.Scene();
-export const renderer = initRenderer();
-initDefaultBasicLight(scene);
 scene.background = new THREE.Color(0x87CEEB);
 
 // ------------------------------------------------------------
@@ -56,17 +53,13 @@ export let currentTrack = 1;
 export const car = createCar(scene);
 // enemyCar criado, mas sem IA por enquanto — só para existir na cena
 export const enemyCar = createEnemyCar ? createEnemyCar(scene) : null;
-// ------------------------------------------------------
-// Criação do carro e pista
-// ------------------------------------------------------
-const car = createCar();
-const { barreirasTrack1, barreirasTrack2 } = createTrack(scene, car);
 
 // ------------------------------------------------------
-// Criação da iluminação
+// Criação da iluminação e renderer
 // ------------------------------------------------------
 
 const dirLight = initLight(scene, car);
+export const renderer = initRenderer();
 
 // ------------------------------------------------------------
 // CAMERA

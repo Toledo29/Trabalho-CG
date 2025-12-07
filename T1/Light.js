@@ -27,13 +27,14 @@ export function initLight(scene, car) {
     dirLight.position.copy(lightPosition);
     dirLight.castShadow = true;
 
-    dirLight.shadow.mapSize.width = 1000;  // default
-    dirLight.shadow.mapSize.height = 1000; // default
-    dirLight.shadow.camera.left = -20;
-    dirLight.shadow.camera.right = 20;
-    dirLight.shadow.camera.top = 20;
-    dirLight.shadow.camera.bottom = -20;
-    dirLight.shadow.camera.far = 60;
+    dirLight.shadow.mapSize.width = 2048;  
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.left = -120;
+    dirLight.shadow.camera.right = 120;
+    dirLight.shadow.camera.top = 120;
+    dirLight.shadow.camera.bottom = -120;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 300;
 
     scene.add(dirLight);
     return dirLight;

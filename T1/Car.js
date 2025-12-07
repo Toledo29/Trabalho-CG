@@ -55,6 +55,17 @@ function buildHovercraft(baseMat, bodyMat, cabineMat, noseMat) {
   nose.position.set(1.7, 0.35, 0);
   craft.add(nose);
 
+  base.castShadow = true;
+  base.receiveShadow = true;
+  body.castShadow = true;
+  body.receiveShadow = true;
+  cabine.castShadow = true;
+  cabine.receiveShadow = true;
+  nose.castShadow = true;
+  nose.receiveShadow = true;
+  craft.castShadow = true;
+  craft.receiveShadow = true;
+
   return craft;
 }
 
@@ -83,16 +94,6 @@ export function createCar(scene) {
     maxReverseSpeed: -30,
     turnSpeed: THREE.MathUtils.degToRad(120)
   };
-  base.castShadow = true;
-  base.receiveShadow = true;
-  body.castShadow = true;
-  body.receiveShadow = true;
-  cabine.castShadow = true;
-  cabine.receiveShadow = true;
-  nose.castShadow = true;
-  nose.receiveShadow = true;
-  car.castShadow = true;
-  car.receiveShadow = true;
   scene.add(car);
   return car;
 }
