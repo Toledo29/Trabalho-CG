@@ -1,99 +1,120 @@
 // Track.js
 import * as THREE from 'three';
-import { resetCarPosition } from '../T1/Car.js';
-import { createWalls } from '../T1/Walls.js';
-import { createGroundPlane } from '../T1/Ground.js';
-import { setDefaultMaterial, degreesToRadians } from "../libs/util/util.js";
+import { degreesToRadians } from "../libs/util/util.js";
+import { START_POS_TRACK1, START_POS_TRACK2, START_POS_TRACK3 } from './Car.js';
 
-// Material do asfalto
-const materialPista = setDefaultMaterial('rgba(138, 138, 138, 1)');
+export let track1 = null;
+export let track2 = null;
+export let track3 = null;
 
-let track1, track2;
-let currentTrack = 1;
+export function createTrack(scene, materialPista) {
 
-const START_POS_TRACK1 = new THREE.Vector3(-80, 0.5, -90);
-const START_POS_TRACK2 = new THREE.Vector3(-10, 0.5, -90);
-
-// ========================================================
-// Função principal: cria as pistas na cena
-// ========================================================
-export function createTrack(scene, car) {
+  // ------------------------------------------------------------
+  // PISTA 1 — QUADRADA (ORIGINAL)
+  // ------------------------------------------------------------
   track1 = new THREE.Group();
   createSquareTrackElements(track1, materialPista);
 
-  const checkpoint1 = new THREE.Mesh(
-    new THREE.PlaneGeometry(30, 40),
-    new THREE.MeshBasicMaterial({ color: 0xffff00 })
-  );
-  checkpoint1.rotation.x = degreesToRadians(-90);
-  checkpoint1.position.set(START_POS_TRACK1.x, 0.05, START_POS_TRACK1.z);
-  track1.add(checkpoint1);
+  const checkpoint1 = makeCheckpoint(START_POS_TRACK1.x, START_POS_TRACK1.z);
+  const checkpoint2 = makeCheckpoint(90, START_POS_TRACK1.z);
+  const checkpoint3 = makeCheckpoint(90, 90);
+  const checkpoint4 = makeCheckpoint(-90, 90);
+  track1.add(checkpoint1, checkpoint2, checkpoint3, checkpoint4);
   track1.receiveShadow = true;
 
+
+  // ------------------------------------------------------------
+  // PISTA 2 — EM L (ORIGINAL)
+  // ------------------------------------------------------------
   track2 = new THREE.Group();
   createLTrackElements(track2, materialPista);
 
-  const checkpoint2 = new THREE.Mesh(
-    new THREE.PlaneGeometry(30, 40),
-    new THREE.MeshBasicMaterial({ color: 0xffff00 })
-  );
-  checkpoint2.rotation.x = degreesToRadians(-90);
-  checkpoint2.position.set(START_POS_TRACK2.x, 0.05, START_POS_TRACK2.z);
-  track2.add(checkpoint2);
-  track2.receiveShadow = true;
+  const checkpoint5  = makeCheckpoint(START_POS_TRACK2.x, START_POS_TRACK2.z);
+  const checkpoint6  = makeCheckpoint(90, START_POS_TRACK2.z);
+  const checkpoint7  = makeCheckpoint(90, 90);
+  const checkpoint8  = makeCheckpoint(-10, 90);
+  const checkpoint9  = makeCheckpoint(-10, -10);
+  const checkpoint10 = makeCheckpoint(-90, -10);
+  track2.add(checkpoint5, checkpoint6, checkpoint7, checkpoint8, checkpoint9, checkpoint10);
+
+
+  // ------------------------------------------------------------
+  // PISTA 3 — 4 QUADRANTES (NOVA)
+  // ------------------------------------------------------------
+  track3 = new THREE.Group();
+  createFourQuadrantTrack(track3, materialPista);
+
+  const checkpoint11 = makeCheckpoint(START_POS_TRACK3.x, START_POS_TRACK3.z);
+  const checkpoint12 = makeCheckpoint(0, 90);
+  const checkpoint13 = makeCheckpoint(80, 10);
+  const checkpoint14 = makeCheckpoint(-80, 10);
+  track3.add(checkpoint11, checkpoint12, checkpoint13, checkpoint14);
+
+
+  // ------------------------------------------------------------
+  // ADD ao SCENE
+  // ------------------------------------------------------------
+  track1.userData.checkpoint = checkpoint1;
+  track2.userData.checkpoint = checkpoint5;
+  track3.userData.checkpoint = checkpoint11;
 
   scene.add(track1);
   scene.add(track2);
+  scene.add(track3);
 
-  // visibilidade inicial
   track1.visible = true;
   track2.visible = false;
-
-  // reposiciona o carro
-  if (car) resetCarPosition(currentTrack);
-
-  // adiciona elementos adicionais
-  //createGroundPlane(scene);
-  //createWalls(scene);  
-
-  const ground = createGroundPlane(scene);
-  const { barreiras } = createWalls(scene, 1); // 1 = quadrada, 2 = L
-  
-  return { barreirasTrack1: barreiras, barreirasTrack2: [] };
+  track3.visible = false;
 }
 
-// ========================================================
-// Pista quadrada
-// ========================================================
-function createSquareTrackElements(trackGroup, material) {
-  const trackWidth = 20;
-  const planeGeometryX = new THREE.PlaneGeometry(200, trackWidth);
-  const planeGeometryZ = new THREE.PlaneGeometry(trackWidth, 200);
 
-  const mat4 = new THREE.Matrix4();
-
-  const createPlane = (geom, tx, tz) => {
-    const mesh = new THREE.Mesh(geom, material);
-    mesh.receiveShadow = true;
-    mesh.matrixAutoUpdate = false;
-    mesh.matrix.identity()
-      .multiply(mat4.makeTranslation(tx, 0, tz)) // y=0 para alinhar com o carro
-      .multiply(mat4.makeRotationX(degreesToRadians(-90)));
-    trackGroup.add(mesh);
-  };
-
-  createPlane(planeGeometryX, 0, 90);
-  createPlane(planeGeometryX, 0, -90);
-  createPlane(planeGeometryZ, -90, 0);
-  createPlane(planeGeometryZ, 90, 0);
+// =====================================================================
+// CHECKPOINT HELPERS
+// =====================================================================
+function makeCheckpoint(x, z) {
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshBasicMaterial({ color: 0xffff00 })
+  );
+  m.rotation.x = degreesToRadians(-90);
+  m.position.set(x, 0.05, z);
+  return m;
 }
 
-// ========================================================
-// Pista em formato L
-// ========================================================
-function createLTrackElements(trackGroup, material) {
+
+// =====================================================================
+// GEOMETRIA DA PISTA QUADRADA
+// =====================================================================
+export function createSquareTrackElements(trackGroup, material) {
   const trackWidth = 20;
-  const mat4Rotation = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
+
+  const gX = new THREE.PlaneGeometry(200, trackWidth);
+  const gZ = new THREE.PlaneGeometry(trackWidth, 200);
+
+  const p1 = new THREE.Mesh(gX, material);
+  const p2 = new THREE.Mesh(gX, material);
+  const p3 = new THREE.Mesh(gZ, material);
+  const p4 = new THREE.Mesh(gZ, material);
+
+  let rot = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
+
+  p1.matrixAutoUpdate = p2.matrixAutoUpdate = false;
+  p3.matrixAutoUpdate = p4.matrixAutoUpdate = false;
+
+  p1.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(0, -0.1, 90)).multiply(rot);
+  p2.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(0, -0.1, -90)).multiply(rot);
+  p3.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(-90, -0.1, 0)).multiply(rot);
+  p4.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(90, -0.1, 0)).multiply(rot);
+
+  trackGroup.add(p1, p2, p3, p4);
+}
+
+
+// =====================================================================
+// GEOMETRIA DA PISTA EM L
+// =====================================================================
+export function createLTrackElements(trackGroup, material) {
+  const trackWidth = 20;
 
   const segmentData = [
     { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, 0, -90) },
@@ -104,22 +125,53 @@ function createLTrackElements(trackGroup, material) {
     { length: 60, isHorizontal: false, pos: new THREE.Vector3(-90, 0, -50) },
   ];
 
-  segmentData.forEach(item => {
-    const geometry = item.isHorizontal
-      ? new THREE.PlaneGeometry(item.length, trackWidth)
-      : new THREE.PlaneGeometry(trackWidth, item.length);
+  let rot = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
 
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.receiveShadow = true;
+  segmentData.forEach(s => {
+    let geo = s.isHorizontal
+      ? new THREE.PlaneGeometry(s.length, trackWidth)
+      : new THREE.PlaneGeometry(trackWidth, s.length);
+
+    let mesh = new THREE.Mesh(geo, material);
     mesh.matrixAutoUpdate = false;
+    mesh.matrix.identity()
+      .multiply(new THREE.Matrix4().makeTranslation(s.pos.x, s.pos.y, s.pos.z))
+      .multiply(rot);
 
-    const mat4Translation = new THREE.Matrix4().makeTranslation(
-      item.pos.x,
-      item.pos.y,
-      item.pos.z
-    );
+    trackGroup.add(mesh);
+  });
+}
 
-    mesh.matrix.identity().multiply(mat4Translation).multiply(mat4Rotation);
+
+// =====================================================================
+// GEOMETRIA DA PISTA 3 — 4 QUADRANTES
+// =====================================================================
+export function createFourQuadrantTrack(trackGroup, material) {
+
+  const trackWidth = 20;
+
+  const segmentData = [
+    { length: 100, isHorizontal: true, pos: new THREE.Vector3(-40, -0.1, -90) },
+    { length: 200, isHorizontal: false, pos: new THREE.Vector3(0, -0.1, 0) },
+    { length: 180, isHorizontal: true, pos: new THREE.Vector3(0, -0.1, 10) },
+    { length: 60, isHorizontal: false, pos: new THREE.Vector3(80, -0.1, 50) },
+    { length: 100, isHorizontal: true, pos: new THREE.Vector3(40, -0.1, 90) },
+    { length: 80, isHorizontal: false, pos: new THREE.Vector3(-80, -0.1, -40) },
+  ];
+
+  let rot = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
+
+  segmentData.forEach(s => {
+    let geo = s.isHorizontal
+      ? new THREE.PlaneGeometry(s.length, trackWidth)
+      : new THREE.PlaneGeometry(trackWidth, s.length);
+
+    let mesh = new THREE.Mesh(geo, material);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrix.identity()
+      .multiply(new THREE.Matrix4().makeTranslation(s.pos.x, s.pos.y, s.pos.z))
+      .multiply(rot);
+
     trackGroup.add(mesh);
   });
 }
