@@ -3,7 +3,19 @@ import * as THREE from 'three';
 
 // contador de voltas e limite
 export let lapCount = 0;
+export let lapCountEnemy = 0;
 export const MAX_LAPS = 4;
+
+// Rastreia quem venceu primeiro
+export let winner = null; // null = ninguém, 'player' = jogador, 'enemy' = adversário
+
+// Função para marcar vencedor do adversário
+export function setEnemyWinner() {
+  if (winner === null) {
+    winner = 'enemy';
+    gameOver = true;
+  }
+}
 
 // ============================================================
 // CHECKPOINTS — PISTA 1
@@ -12,12 +24,13 @@ export const checkpointsTrack1 = [
   { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP1
   { pos: new THREE.Vector3(90, 1, -90),  radius: 20 }, // CP2
   { pos: new THREE.Vector3(90, 1, 90),   radius: 20 }, // CP3
-  { pos: new THREE.Vector3(-40, 1, 90),  radius: 20 }  // CP4
+  { pos: new THREE.Vector3(-90, 1, 90),  radius: 20 }, // CP4
+  { pos: new THREE.Vector3(-90, 1, -90), radius: 20 }  // CP15
 ];
 
 let expectedIndex1 = 0;
 let sequenceComplete1 = false;
-const checkpointInside1 = [false, false, false, false];
+const checkpointInside1 = [false, false, false, false, false];
 
 // ============================================================
 // CHECKPOINTS — PISTA 2 (L)
@@ -28,26 +41,30 @@ export const checkpointsTrack2 = [
   { pos: new THREE.Vector3(90, 1, 90),   radius: 20 }, // CP7
   { pos: new THREE.Vector3(-5,  1, 90),  radius: 20 }, // CP8
   { pos: new THREE.Vector3(-10, 1, 0),   radius: 20 }, // CP9
-  { pos: new THREE.Vector3(-90, 1, -10), radius: 20 }  // CP10
+  { pos: new THREE.Vector3(-90, 1, -10), radius: 20 }, // CP10
+  { pos: new THREE.Vector3(-90, 1, -90), radius: 20 }  // CP16
 ];
 
 let expectedIndex2 = 0;
 let sequenceComplete2 = false;
-const checkpointInside2 = [false, false, false, false, false, false];
+const checkpointInside2 = [false, false, false, false, false, false, false];
 
 // ============================================================
 // CHECKPOINTS — PISTA 3 (4 QUADRANTES)
 // ============================================================
 export const checkpointsTrack3 = [
   { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP11 - início
+  { pos: new THREE.Vector3(0,   1, -90), radius: 20 }, // CP17
   { pos: new THREE.Vector3(0,   1, 90),  radius: 20 }, // CP12
-  { pos: new THREE.Vector3(80,  1, 15),  radius: 20 }, // CP13
-  { pos: new THREE.Vector3(-75, 1, 0),   radius: 20 }  // CP14
+  { pos: new THREE.Vector3(80,  1, 90),  radius: 20 }, // CP18
+  { pos: new THREE.Vector3(80,  1, 10),  radius: 20 }, // CP13
+  { pos: new THREE.Vector3(-80, 1, 10),  radius: 20 }, // CP14
+  { pos: new THREE.Vector3(-80, 1, -90), radius: 20 }  // CP19
 ];
 
 let expectedIndex3 = 0;
 let sequenceComplete3 = false;
-const checkpointInside3 = [false, false, false, false];
+const checkpointInside3 = [false, false, false, false, false, false, false];
 
 // ============================================================
 // game over flag
@@ -59,7 +76,9 @@ let gameOver = false;
 // ============================================================
 export function resetLapSystem() {
   lapCount = 0;
+  lapCountEnemy = 0;
   gameOver = false;
+  winner = null;
 
   // pista 1
   expectedIndex1 = 0;
@@ -110,10 +129,16 @@ function processLap(car, checkpoints, expectedIndex, sequenceComplete, insideFla
     // sequenceComplete === true e entrou no CP inicial -> conta volta
     lapCount = Math.min(lapCount + 1, MAX_LAPS);
 
-    // se chegou ao max, marca game over e retorna mensagem final
-    if (lapCount >= MAX_LAPS) {
+    // se chegou ao max, marca vitória do jogador
+    if (lapCount >= MAX_LAPS && winner === null) {
+      winner = 'player';
       gameOver = true;
-      return { expectedIndex: checkpoints.length - 1, sequenceComplete: false, lapText: `Fim de jogo` };
+      return { expectedIndex: checkpoints.length - 1, sequenceComplete: false, lapText: `Você venceu! 🏆` };
+    }
+    
+    // Se já tem um vencedor, mantém a mensagem
+    if (gameOver && winner === 'player') {
+      return { expectedIndex: checkpoints.length - 1, sequenceComplete: false, lapText: `Você venceu! 🏆` };
     }
 
     // caso ainda não tenha atingido MAX_LAPS, prepara próxima volta
@@ -136,7 +161,12 @@ function processLap(car, checkpoints, expectedIndex, sequenceComplete, insideFla
 // ============================================================
 export function checkLapCount(car, currentTrack) {
   if (gameOver) {
-    // quando game over, sempre devolve a mensagem (caso queira manter HUD)
+    // quando game over, mostra mensagem baseada no vencedor
+    if (winner === 'player') {
+      return `Você venceu! 🏆`;
+    } else if (winner === 'enemy') {
+      return `Adversário ganhou`;
+    }
     return `Fim de jogo`;
   }
 

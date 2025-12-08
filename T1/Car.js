@@ -90,81 +90,29 @@ export function createCar(scene) {
 
 
 // ------------------------------------------------------------
-// CARRO ADVERSÁRIO (NOVO)
-// ------------------------------------------------------------
-export function createEnemyCar(scene) {
-
-  // Materiais foscos (Lambert)
-  const matteRed    = new THREE.MeshLambertMaterial({ color: 0xaa0000 });
-  const matteBlue   = new THREE.MeshLambertMaterial({ color: 0x0033aa });
-
-  // Material brilhante (Phong)
-  const shinyYellow = new THREE.MeshPhongMaterial({
-    color: 0xffff00,
-    shininess: 100
-  });
-
-  // Cria hovercraft adversário
-  const enemy = buildHovercraft(
-    matteBlue,     // base fosca azul
-    shinyYellow,   // corpo brilhante amarelo
-    matteRed,      // cabine fosca vermelha
-    shinyYellow    // nariz brilhante amarelo
-  );
-
-  enemy.position.set(-110, 0.5, -100);
-  enemy.rotation.y = 0;
-
-  enemy.userData = {
-    speed: 0,
-    accel: 12.0,
-    brake: 10.0,
-    drag: 10,
-    maxSpeed: 18,
-    turnSpeed: THREE.MathUtils.degToRad(70),
-
-    // controle do bot
-    aiEnabled: true,
-    aiTargetIndex: 0
-  };
-
-  scene.add(enemy);
-  return enemy;
-}
-
-
-// ------------------------------------------------------------
 // RESET DO CARRO POR PISTA
 // ------------------------------------------------------------
-export function resetCarPosition(car,enemy, trackNumber) {
-  let newPos, newRot, newPoscar2, newRotcar2;
+export function resetCarPosition(car, enemy, trackNumber) {
+  let newPos, newRot;
   if (trackNumber === 1) {
     newPos = START_POS_TRACK1;
     newRot = START_ROT_TRACK1;
-    newPoscar2 = START_POS_TRACKcar2;
-    newRotcar2 = START_ROT_TRACKcar2;
   } else if (trackNumber === 2) {
     newPos = START_POS_TRACK2;
     newRot = START_ROT_TRACK2;
-    newPoscar2 = START_POS_TRACKcar2;
-    newRotcar2 = START_ROT_TRACKcar2;
   } else if (trackNumber === 3) {
     newPos = START_POS_TRACK3;
     newRot = START_ROT_TRACK3;
-    newPoscar2 = START_POS_TRACKcar2;
-    newRotcar2 = START_ROT_TRACKcar2;
   } else {
     newPos = START_POS_TRACK1;
     newRot = START_ROT_TRACK1;
-    newPoscar2 = START_POS_TRACKcar2;
-    newRotcar2 = START_ROT_TRACKcar2;
   }
   car.position.copy(newPos);
   car.rotation.y = newRot;
   car.userData.speed = 0;
-  enemy.position.copy(newPoscar2);
-  enemy.rotation.y = newRotcar2;
-  enemy.userData.speed = 0;
+  
+  // Reset do adversário é feito no Scene.js chamando resetEnemyPosition
+  // Isso evita dependência circular
 }
 
 
@@ -199,6 +147,11 @@ export function updateCar(car, delta, moveDirection) {
   else if (moveDirection.right)
     car.rotation.y -= carData.turnSpeed * delta;
 
-  // Mover
-  car.translateX(carData.speed * delta);
+  // Mover usando a velocidade atual na direção que está olhando
+  const forwardDir = new THREE.Vector3(
+    Math.cos(car.rotation.y),
+    0,
+    -Math.sin(car.rotation.y)
+  );
+  car.position.addScaledVector(forwardDir, carData.speed * delta);
 }
