@@ -163,6 +163,12 @@ function removeArvores() {
 // Cria árvores da pista quadrada inicialmente
 arvoresAtuais = criaArvoresQuadrado(scene);
 
+//cria tunel
+
+const tunel = criaTunel(scene);
+tunel.position.set(-90, -6, 0);
+scene.add(tunel);
+
 // ------------------------------------------------------------
 // KEYBOARD UPDATE
 // ------------------------------------------------------------
@@ -205,6 +211,9 @@ function keyboardUpdate() {
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
     removeArvores();
     arvoresAtuais = criaArvoresL(scene);
+    scene.remove(tunel);
+    tunel.position.set(-90, -6, -50);
+    scene.add(tunel);
   }
 
   // TRACK 3 (NOVA)
@@ -221,6 +230,9 @@ function keyboardUpdate() {
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
     removeArvores();
     arvoresAtuais = criaArvoresQuatroQuadrantes(scene);
+    scene.remove(tunel);
+    tunel.position.set(-80, -6, -50);
+    scene.add(tunel);
   }
 }
 

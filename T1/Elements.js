@@ -156,9 +156,17 @@ export function criaArvore2()
 
 export function criaTunel()
 {
-    const Geometry = new THREE.CylinderGeometry(5, 5, 50, 32); 
-    const Geometry2 = new THREE.CylinderGeometry(4.5, 4.5, 50, 32);
-    const Geometry3 = new THREE. TorusKnotGeometry(17, 2.5, 100, 16);
+    const raioExterno = 12;
+    const raioInterno = 11; 
+    // Comprimento do túnel
+    const comprimento = 50; 
+
+    // Geometria do cilindro externo
+    const Geometry = new THREE.CylinderGeometry(raioExterno, raioExterno, comprimento, 32); 
+    // Geometria do cilindro interno para a cavidade
+    const Geometry2 = new THREE.CylinderGeometry(raioInterno, raioInterno, comprimento, 32);
+    // Geometria do Torus Knot para os furos (ajustei o primeiro parâmetro para manter a proporção)
+    const Geometry3 = new THREE.TorusKnotGeometry(raioExterno * 1.5, 2.5, 100, 16); // 11 * 1.5 = 16.5
 
     const cylinder = new THREE.Mesh(Geometry, material3);
     const cylinder2 = new THREE.Mesh(Geometry2 , material3);
@@ -166,32 +174,68 @@ export function criaTunel()
     const furos2 = new THREE.Mesh(Geometry3 , material3);
     const furos3 = new THREE.Mesh(Geometry3 , material3);
 
+    // Cilindros externos/internos são rotacionados para ficarem no eixo Z (como um túnel)
     cylinder.rotateX(THREE.MathUtils.degToRad(90));
     cylinder.position.set(0.0, 5, 0.0);
     updateObject(cylinder);
     cylinder2.rotateX(THREE.MathUtils.degToRad(90));
     cylinder2.position.set(0.0, 5, 0.0);
     updateObject(cylinder2);
+    
+    // --- Furos: Posição e Rotação ---
     furos1.rotateY(THREE.MathUtils.degToRad(45));
     furos1.rotateX(THREE.MathUtils.degToRad(25));
-    furos1.position.set(0.0, 2.0, 15.0);
+    furos1.position.set(0.0, 5.0, 15.0); // Ajustando a posição Y
     updateObject(furos1);
+    
     furos2.rotateY(THREE.MathUtils.degToRad(75));
     furos2.rotateX(THREE.MathUtils.degToRad(215));
-    furos2.position.set(0.0, 2.0, -10.0);
+    furos2.position.set(0.0, 5.0, -10.0); // Ajustando a posição Y
     updateObject(furos2);
+    
     furos3.rotateY(THREE.MathUtils.degToRad(75));
     furos3.rotateX(THREE.MathUtils.degToRad(215));
-    furos3.position.set(0.0, 2.0, 0.0);
+    furos3.position.set(0.0, 5.0, 0.0); // Ajustando a posição Y
     updateObject(furos3);
-
     
+    // --- Criação do Bloco de Corte para a Metade Inferior ---
+    // Cria uma caixa grande o suficiente para cobrir exatamente a metade inferior.
+    // O túnel tem raio 11, então a altura da caixa deve ser 11, e sua base deve estar em Y=0
+    const BoxGeometry = new THREE.BoxGeometry(raioExterno * 2.2, raioExterno * 1.1, comprimento * 1.2); 
+    const corteInferior = new THREE.Mesh(BoxGeometry, material3);
+    // Posição: 0 no X e Z. A posição Y será:
+    // (Altura da caixa / 2) - Offset do cilindro. 
+    // Se o centro do cilindro está em Y=5 e a altura da caixa é 12.1 (raioExterno * 1.1),
+    // o topo da caixa estará em Y=5 + (12.1 / 2) = 11.05.
+    // Queremos que a caixa corte a parte inferior do cilindro, que vai de Y=5-11 = -6 até Y=5+11 = 16.
+    // Para cortar a metade inferior (Y < 5), o topo da caixa de corte deve estar em Y=5.
+    // Centro da caixa: Y = 5 - (11 / 2) = -0.5 (se a altura da caixa fosse 11).
+    // Usaremos uma caixa com altura 11 e posicionamento Y= -0.5 + 5 = 4.5.
+    // Ou, uma caixa com altura 11.1 (apenas para garantir) posicionada no centro Y = 5 - (11.1 / 2) = -0.55
+    corteInferior.position.set(0.0, 5.0 - (raioExterno / 2), 0.0); // 5 - (11/2) = -0.5. Altura do corte = 11
+    
+    // Usando uma caixa com altura igual ao raio e posicionada no Y=centro - metade da altura
+    const BoxGeometryCorte = new THREE.BoxGeometry(raioExterno * 2.2, raioExterno, comprimento * 1.2); 
+    const corteInferiorMesh = new THREE.Mesh(BoxGeometryCorte, material3);
+    // Move o centro da caixa para que o topo fique no centro Y do cilindro (Y=5).
+    // Posição Y = 5 (centro do cilindro) - (Raio / 2)
+    corteInferiorMesh.position.set(0.0, 5.0 - (raioExterno / 2), 0.0); 
+    updateObject(corteInferiorMesh);
+
+    // --- Operações CSG ---
     let tunelCSG = CSG.fromMesh(cylinder);
+    
+    // 1. Abre a cavidade do túnel
     tunelCSG = tunelCSG.subtract(CSG.fromMesh(cylinder2));
+    
+    // 2. Cria os furos
     tunelCSG = tunelCSG.subtract(CSG.fromMesh(furos1));
     tunelCSG = tunelCSG.subtract(CSG.fromMesh(furos2));
     tunelCSG = tunelCSG.subtract(CSG.fromMesh(furos3));
 
+    // 3. **NOVO**: Corta a metade inferior
+    tunelCSG = tunelCSG.subtract(CSG.fromMesh(corteInferiorMesh)); // Subtrai a caixa de corte inferior
+    
 
     const tunelMesh = CSG.toMesh(tunelCSG, new THREE.Matrix4(), material3);
 
