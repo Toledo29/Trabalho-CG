@@ -1,7 +1,10 @@
 // Car.js
 import * as THREE from 'three';
+import { CSG } from '../libs/other/CSGMesh.js';
 import { setDefaultMaterial, degreesToRadians } from "../libs/util/util.js";
 
+
+let material = setDefaultMaterial('rgba(189, 82, 32, 1)');
 // ------------------------------------------------------------
 // POSIÇÕES INICIAIS — 3 PISTAS
 // ------------------------------------------------------------
@@ -22,38 +25,45 @@ export const START_ROT_TRACK3 = degreesToRadians(0);
 // FUNÇÃO GENÉRICA DE CRIAÇÃO DO MODELO DO HOVERCRAFT
 // (usada tanto para o jogador quanto para o adversário)
 // ------------------------------------------------------------
-function buildHovercraft(baseMat, bodyMat, cabineMat, noseMat) {
+export function buildHovercraft(baseMat, bodyMat, cabineMat, noseMat) {
+
+  const geometry = new THREE.BoxGeometry( 7, 5, 2.5 );
+  const geometry2 = new THREE.CylinderGeometry( 2.5, 2.5, 2.5, 14);
+  const geometry3 = new THREE.BoxGeometry( 3.5, 1, 2.5);
+  
+  const baseG = new THREE.Mesh(geometry, material);
+  const add =new THREE.Mesh(geometry2, material);
+  const add2 =new THREE.Mesh(geometry2, material);
+  
+  baseG.position.set(0, 1.5, 0);
+  baseG.rotateX(THREE.MathUtils.degToRad(90));
+  updateObject(baseG);
+  add.position.set(3.5, 1.5, 0);
+  updateObject(add);
+  add2.position.set(-3.5, 1.5, 0);
+  updateObject(add2);
+  
+  let baseCSG = CSG.fromMesh(baseG);
+  baseCSG =baseCSG.union(CSG.fromMesh(add));
+  baseCSG =baseCSG.union(CSG.fromMesh(add2));
+  
+  
+  
+  const baseMesh = CSG.toMesh(baseCSG, baseG.matrix, material);
 
   const craft = new THREE.Group();
 
-  const base = new THREE.Mesh(
-    new THREE.TorusGeometry(1.3, 0.25, 16, 32),
-    baseMat
-  );
-  base.rotation.x = Math.PI / 2;
+  const base = baseMesh
+  base.position.y = 1.5;
   craft.add(base);
 
   const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.2, 1.4, 0.8, 16),
+    geometry3,
     bodyMat
   );
-  body.position.y = 0.55;
+  body.position.y = 3;
+  body.position.x = -1;
   craft.add(body);
-
-  const cabine = new THREE.Mesh(
-    new THREE.BoxGeometry(1.0, 0.5, 0.7),
-    cabineMat
-  );
-  cabine.position.set(0, 1.0, 0);
-  craft.add(cabine);
-
-  const nose = new THREE.Mesh(
-    new THREE.ConeGeometry(0.4, 1.0, 16),
-    noseMat
-  );
-  nose.rotation.z = Math.PI / 2;
-  nose.position.set(1.7, 0.35, 0);
-  craft.add(nose);
 
   return craft;
 }
@@ -201,4 +211,10 @@ export function updateCar(car, delta, moveDirection) {
 
   // Mover
   car.translateX(carData.speed * delta);
+}
+
+function updateObject(mesh)
+{
+   mesh.matrixAutoUpdate = false;
+   mesh.updateMatrix();
 }

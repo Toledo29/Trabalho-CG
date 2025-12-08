@@ -1,4 +1,5 @@
 import * as THREE from  'three';
+import {buildHovercraft} from './Car.js'
 import { CSG } from '../libs/other/CSGMesh.js';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import {initRenderer, 
@@ -28,14 +29,45 @@ let axesHelper = new THREE.AxesHelper( 12 );
 scene.add( axesHelper );
 
 // create the ground plane
-let plane = createGroundPlaneXZ(20, 20)
+let plane = createGroundPlaneXZ(20, 20);
 scene.add(plane);
+
+const geometry = new THREE.BoxGeometry( 7, 5, 2.5 );
+const geometry2 = new THREE.CylinderGeometry( 2.5, 2.5, 2.5, 14);
+
+const base = new THREE.Mesh(geometry, material2);
+const add =new THREE.Mesh(geometry2, material2);
+const add2 =new THREE.Mesh(geometry2, material2);
+
+base.position.set(0, 1.5, 0);
+base.rotateX(THREE.MathUtils.degToRad(90));
+updateObject(base);
+add.position.set(3.5, 1.5, 0);
+updateObject(add);
+add2.position.set(-3.5, 1.5, 0);
+updateObject(add2);
+
+let baseCSG = CSG.fromMesh(base);
+baseCSG =baseCSG.union(CSG.fromMesh(add));
+baseCSG =baseCSG.union(CSG.fromMesh(add2));
+
+
+
+const baseMesh = CSG.toMesh(baseCSG, base.matrix, material2);
+
+ 
+baseMesh.position.set(0, 1, 0);
+baseMesh.castShadow = true;
+baseMesh.receiveShadow = true;
+
+let b = baseMesh;
 
 
 let arvore = criaArvore2();
 let tunel = criaTunel();
+let carro = buildHovercraft(material,material ,material ,material);
 
-scene.add(tunel);
+scene.add(carro);
 
 // Use this to show information onscreen
 let controls = new InfoBox();
