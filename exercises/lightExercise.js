@@ -18,6 +18,7 @@ camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight,
    camera.up.set( 0, 1, 0 );
 orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
+
 // Listen window size changes
 window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
 
@@ -41,7 +42,40 @@ initDefaultBasicLight(scene);
 //---------------------------------------------------------
 // Load external objects
 buildInterface();
+
+let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); 
+
+let cubeGeometry = new THREE.BoxGeometry(0.2, 1.0, 0.2);
+let cube = new THREE.Mesh(cubeGeometry, material);
+// position the cube
+cube.position.set(2.0, 0.50, 1.0);
+// add the cube to the scene
+scene.add(cube);
+
+let cubeGeometry2 = new THREE.BoxGeometry(0.2, 1.0, 0.2);
+let cube2= new THREE.Mesh(cubeGeometry2, material);
+// position the cube
+cube2.position.set(2.0, 0.50, -1.0);
+// add the cube to the scene
+scene.add(cube2);
+
+let position = new THREE. Vector3(1.0, 0.5, 0.2);
+let lightColor = "rgb(255,255,255)";
+let pointLight = new THREE. PointLight (lightColor, 15.0);
+pointLight.position.copy (position);
+pointLight.castShadow = true;
+scene.add(pointLight);
+
+
+
 render();
+
+// ... código anterior
+
+//---------------------------------------------------------
+// Load external objects
+// ... código posterior
+
 
 function buildInterface()
 {

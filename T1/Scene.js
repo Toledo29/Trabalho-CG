@@ -10,8 +10,8 @@ import {
   onWindowResize
 } from "../libs/util/util.js";
 
-// ADIÇÃO: importei createEnemyCar
-import { createCar, createEnemyCar, resetCarPosition, updateCar } from './Car.js';
+import { createCar, resetCarPosition, updateCar } from './Car.js';
+import { createEnemyCar, updateEnemyCar, resetEnemyCheckpointIndex } from './Enemy.js';
 import { createTrack, track1, track2, track3 } from './Track.js';
 
 import {
@@ -28,7 +28,7 @@ import {
 
 import { createGroundPlane } from './Ground.js';
 import { updateCameraFollow } from './Camera.js';
-import { checkLapCount, resetLapSystem, MAX_LAPS } from './Misc.js';
+import { checkLapCount, resetLapSystem, MAX_LAPS, winner } from './Misc.js';
 
 // ------------------------------------------------------------
 // SCENE / LIGHT
@@ -53,8 +53,7 @@ export let currentTrack = 1;
 // CAR (PLAYER) e INIMIGO
 // ------------------------------------------------------------
 export const car = createCar(scene);
-// enemyCar criado, mas sem IA por enquanto — só para existir na cena
-export const enemyCar = createEnemyCar ? createEnemyCar(scene) : null;
+export const enemyCar = createEnemyCar(scene);
 
 // ------------------------------------------------------------
 // CAMERA
@@ -168,6 +167,7 @@ function keyboardUpdate() {
     groupThirdWalls.visible = false;
 
     resetCarPosition(car,enemyCar, 1);
+    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
     
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
@@ -186,6 +186,7 @@ function keyboardUpdate() {
     groupThirdWalls.visible = false;
 
     resetCarPosition(car,enemyCar, 2);
+    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
     
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
@@ -204,6 +205,7 @@ function keyboardUpdate() {
     groupThirdWalls.visible = true;
 
     resetCarPosition(car,enemyCar, 3);
+    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
     
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
@@ -213,9 +215,10 @@ function keyboardUpdate() {
 // ------------------------------------------------------------
 // COLLISIONS
 // ------------------------------------------------------------
-function checkCollision(track) {
-  const carBB = new THREE.Box3().setFromObject(car);
-  const carDir = new THREE.Vector3(Math.cos(car.rotation.y), 0, -Math.sin(car.rotation.y));
+// Função genérica para verificar colisão de qualquer veículo
+function checkVehicleCollision(vehicle, track) {
+  const vehicleBB = new THREE.Box3().setFromObject(vehicle);
+  const vehicleDir = new THREE.Vector3(Math.cos(vehicle.rotation.y), 0, -Math.sin(vehicle.rotation.y));
 
   const list = track === 1 ? barreirasTrack1 :
               track === 2 ? barreirasTrack2 :
@@ -224,24 +227,25 @@ function checkCollision(track) {
   for (const { mesh, bb } of list) {
     bb.setFromObject(mesh);
 
-    if (carBB.intersectsBox(bb)) {
-      const overlapX = Math.min(carBB.max.x, bb.max.x) - Math.max(carBB.min.x, bb.min.x);
-      const overlapZ = Math.min(carBB.max.z, bb.max.z) - Math.max(carBB.min.z, bb.min.z);
+    if (vehicleBB.intersectsBox(bb)) {
+      const overlapX = Math.min(vehicleBB.max.x, bb.max.x) - Math.max(vehicleBB.min.x, bb.min.x);
+      const overlapZ = Math.min(vehicleBB.max.z, bb.max.z) - Math.max(vehicleBB.min.z, bb.min.z);
 
       let normal = new THREE.Vector3();
       let correction = new THREE.Vector3();
 
       if (overlapX < overlapZ) {
-        normal.set(car.position.x > mesh.position.x ? 1 : -1, 0, 0);
+        normal.set(vehicle.position.x > mesh.position.x ? 1 : -1, 0, 0);
         correction.copy(normal).multiplyScalar(overlapX + 0.05);
       } else {
-        normal.set(0, 0, car.position.z > mesh.position.z ? 1 : -1);
+        normal.set(0, 0, vehicle.position.z > mesh.position.z ? 1 : -1);
         correction.copy(normal).multiplyScalar(overlapZ + 0.05);
       }
 
-      car.position.add(correction);
+      vehicle.position.add(correction);
 
-      const movementDir = carDir.clone().multiplyScalar(Math.sign(car.userData.speed));
+      const vehicleSpeed = vehicle.userData.speed !== undefined ? vehicle.userData.speed : 22;
+      const movementDir = vehicleDir.clone().multiplyScalar(Math.sign(vehicleSpeed) || 1);
       const angleDeg = THREE.MathUtils.radToDeg(movementDir.angleTo(normal));
 
       let reductionFactor = 1.0;
@@ -250,19 +254,91 @@ function checkCollision(track) {
         reductionFactor = Math.max(0, reductionFactor);
       }
 
-      const velocityDir = carDir.clone().multiplyScalar(car.userData.speed);
+      const velocityDir = vehicleDir.clone().multiplyScalar(vehicleSpeed);
       const normalComponent = normal.clone().multiplyScalar(velocityDir.dot(normal));
       const tangentialComponent = velocityDir.clone().sub(normalComponent);
 
       if (velocityDir.dot(normal) < 0) velocityDir.sub(normalComponent);
 
       const newSpeed = tangentialComponent.length() * reductionFactor;
-      car.userData.speed = Math.sign(car.userData.speed) * newSpeed;
-
-      if (angleDeg >= 170) car.userData.speed = 0;
+      
+      // Atualiza a velocidade do veículo
+      if (vehicle.userData.speed !== undefined) {
+        vehicle.userData.speed = Math.sign(vehicle.userData.speed) * newSpeed;
+        if (angleDeg >= 170) vehicle.userData.speed = 0;
+      }
 
       return true;
     }
+  }
+
+  return false;
+}
+
+// Função de compatibilidade para o carro do jogador
+function checkCollision(track) {
+  return checkVehicleCollision(car, track);
+}
+
+// ------------------------------------------------------------
+// COLISÃO ENTRE OS DOIS CARROS
+// ------------------------------------------------------------
+function checkCarToCarCollision(car1, car2) {
+  const car1BB = new THREE.Box3().setFromObject(car1);
+  const car2BB = new THREE.Box3().setFromObject(car2);
+
+  if (car1BB.intersectsBox(car2BB)) {
+    // Calcula overlap
+    const overlapX = Math.min(car1BB.max.x, car2BB.max.x) - Math.max(car1BB.min.x, car2BB.min.x);
+    const overlapZ = Math.min(car1BB.max.z, car2BB.max.z) - Math.max(car1BB.min.z, car2BB.min.z);
+
+    // Determina direção da correção
+    let normal = new THREE.Vector3();
+    let correction = new THREE.Vector3();
+
+    if (overlapX < overlapZ) {
+      normal.set(car1.position.x > car2.position.x ? 1 : -1, 0, 0);
+      correction.copy(normal).multiplyScalar(overlapX / 2 + 0.05);
+    } else {
+      normal.set(0, 0, car1.position.z > car2.position.z ? 1 : -1);
+      correction.copy(normal).multiplyScalar(overlapZ / 2 + 0.05);
+    }
+
+    // Separa os carros
+    car1.position.add(correction);
+    car2.position.sub(correction);
+
+    // Reduz velocidade de ambos os carros
+    const car1Speed = car1.userData.speed !== undefined ? car1.userData.speed : 0;
+    const car2Speed = car2.userData.speed !== undefined ? car2.userData.speed : 0;
+
+    // Direções dos carros
+    const car1Dir = new THREE.Vector3(Math.cos(car1.rotation.y), 0, -Math.sin(car1.rotation.y));
+    const car2Dir = new THREE.Vector3(Math.cos(car2.rotation.y), 0, -Math.sin(car2.rotation.y));
+
+    // Calcula impacto
+    const car1Vel = car1Dir.clone().multiplyScalar(car1Speed);
+    const car2Vel = car2Dir.clone().multiplyScalar(car2Speed);
+    const relativeVel = car1Vel.clone().sub(car2Vel);
+    const impact = relativeVel.dot(normal);
+
+    // Se estão se aproximando, aplica força de repulsão
+    if (impact < 0) {
+      const bounceFactor = 0.3; // Fator de rebote
+      const impulse = impact * bounceFactor;
+
+      if (car1.userData.speed !== undefined) {
+        const newSpeed1 = Math.max(0, car1Speed + impulse * 0.5);
+        car1.userData.speed = Math.sign(car1Speed) * newSpeed1;
+      }
+
+      if (car2.userData.speed !== undefined) {
+        const newSpeed2 = Math.max(0, car2Speed - impulse * 0.5);
+        car2.userData.speed = Math.sign(car2Speed) * newSpeed2;
+      }
+    }
+
+    return true;
   }
 
   return false;
@@ -276,13 +352,30 @@ function render() {
 
   const delta = clock.getDelta();
   updateCar(car, delta, moveDirection);
-  // NOTE: por enquanto não há IA/controle do enemyCar — atualize depois se quiser
+  updateEnemyCar(enemyCar, delta, currentTrack);
   updateCameraFollow(camera, car, moveDirection);
 
+  // Verifica colisões para ambos os veículos
   checkCollision(currentTrack);
+  checkVehicleCollision(enemyCar, currentTrack);
+  
+  // Verifica colisão entre os dois carros
+  checkCarToCarCollision(car, enemyCar);
 
   const lapText = checkLapCount(car, currentTrack);
-  if (lapText !== null) lapDiv.innerText = lapText;
+  if (lapText !== null) {
+    // Se há um vencedor, mostra a mensagem apropriada
+    if (winner === 'player') {
+      lapDiv.innerText = 'Você venceu! 🏆';
+    } else if (winner === 'enemy') {
+      lapDiv.innerText = 'Adversário ganhou';
+    } else {
+      lapDiv.innerText = lapText;
+    }
+  } else if (winner === 'enemy') {
+    // Se o adversário ganhou mas o jogador ainda não completou, mostra mensagem
+    lapDiv.innerText = 'Adversário ganhou';
+  }
 
   speedBox.changeMessage("Velocidade: " + Number(car.userData.speed).toFixed(0));
 

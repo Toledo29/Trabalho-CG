@@ -19,7 +19,8 @@ export function createTrack(scene, materialPista) {
   const checkpoint2 = makeCheckpoint(90, START_POS_TRACK1.z);
   const checkpoint3 = makeCheckpoint(90, 90);
   const checkpoint4 = makeCheckpoint(-90, 90);
-  track1.add(checkpoint1, checkpoint2, checkpoint3, checkpoint4);
+  const checkpoint15 = makeCheckpoint(-90, -90);
+  track1.add(checkpoint1, checkpoint2, checkpoint3, checkpoint4,checkpoint15);
 
 
   // ------------------------------------------------------------
@@ -34,7 +35,8 @@ export function createTrack(scene, materialPista) {
   const checkpoint8  = makeCheckpoint(-10, 90);
   const checkpoint9  = makeCheckpoint(-10, -10);
   const checkpoint10 = makeCheckpoint(-90, -10);
-  track2.add(checkpoint5, checkpoint6, checkpoint7, checkpoint8, checkpoint9, checkpoint10);
+  const checkpoint16 = makeCheckpoint(-90, -90);
+  track2.add(checkpoint5, checkpoint6, checkpoint7, checkpoint8, checkpoint9, checkpoint10,checkpoint16);
 
 
   // ------------------------------------------------------------
@@ -44,10 +46,13 @@ export function createTrack(scene, materialPista) {
   createFourQuadrantTrack(track3, materialPista);
 
   const checkpoint11 = makeCheckpoint(START_POS_TRACK3.x, START_POS_TRACK3.z);
+  const checkpoint17 = makeCheckpoint(0, -90);
   const checkpoint12 = makeCheckpoint(0, 90);
+  const checkpoint18 = makeCheckpoint(80, 90);
   const checkpoint13 = makeCheckpoint(80, 10);
   const checkpoint14 = makeCheckpoint(-80, 10);
-  track3.add(checkpoint11, checkpoint12, checkpoint13, checkpoint14);
+  const checkpoint19 = makeCheckpoint(-80, -90);
+  track3.add(checkpoint11, checkpoint12, checkpoint13, checkpoint14,checkpoint17,checkpoint18,checkpoint19);
 
 
   // ------------------------------------------------------------
