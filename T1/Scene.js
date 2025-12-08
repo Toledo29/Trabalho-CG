@@ -1,6 +1,7 @@
 // Scene.js
 import * as THREE from 'three';
 import KeyboardState from '../libs/util/KeyboardState.js';
+import { criaArvoresQuadrado, criaArvoresL, criaArvoresQuatroQuadrantes, criaTunel } from './Elements.js';
 import { initRenderer } from './Renderer.js';
 import { initLight, updateLightFollow } from './Light.js';
 import {
@@ -150,6 +151,19 @@ track2.visible = false;
 track3.visible = false;
 
 // ------------------------------------------------------------
+// ARVORES EM VOLTA DAS PISTAS
+// ------------------------------------------------------------
+let arvoresAtuais = [];
+function removeArvores() {
+  for (const arvore of arvoresAtuais) {
+    scene.remove(arvore);
+  }
+  arvoresAtuais = [];
+}
+// Cria árvores da pista quadrada inicialmente
+arvoresAtuais = criaArvoresQuadrado(scene);
+
+// ------------------------------------------------------------
 // KEYBOARD UPDATE
 // ------------------------------------------------------------
 function keyboardUpdate() {
@@ -160,58 +174,53 @@ function keyboardUpdate() {
   moveDirection.left     = keyboard.pressed("left");
   moveDirection.right    = keyboard.pressed("right");
 
+
   // TRACK 1
   if (keyboard.down("1") && currentTrack !== 1) {
     currentTrack = 1;
-
     track1.visible = true;
     track2.visible = false;
     track3.visible = false;
-
     groupSquareWalls.visible = true;
     groupLWalls.visible = false;
     groupThirdWalls.visible = false;
-
     resetCarPosition(car,enemyCar, 1);
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresQuadrado(scene);
   }
 
   // TRACK 2
   if (keyboard.down("2") && currentTrack !== 2) {
     currentTrack = 2;
-
     track1.visible = false;
     track2.visible = true;
     track3.visible = false;
-
     groupSquareWalls.visible = false;
     groupLWalls.visible = true;
     groupThirdWalls.visible = false;
-
     resetCarPosition(car,enemyCar, 2);
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresL(scene);
   }
 
   // TRACK 3 (NOVA)
   if (keyboard.down("3") && currentTrack !== 3) {
     currentTrack = 3;
-
     track1.visible = false;
     track2.visible = false;
     track3.visible = true;
-
     groupSquareWalls.visible = false;
     groupLWalls.visible = false;
     groupThirdWalls.visible = true;
-
     resetCarPosition(car,enemyCar, 3);
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresQuatroQuadrantes(scene);
   }
 }
 
