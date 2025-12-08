@@ -1,36 +1,36 @@
 import * as THREE from  'three';
-import {buildHovercraft} from './Car.js'
 import { CSG } from '../libs/other/CSGMesh.js';
 import { OrbitControls } from '../build/jsm/controls/OrbitControls.js';
 import {initRenderer, 
-        initCamera,
-        initDefaultBasicLight,
-        setDefaultMaterial,
-        InfoBox,
-        onWindowResize,
-        createGroundPlaneXZ} from "../libs/util/util.js";
+    initCamera,
+    initDefaultBasicLight,
+    setDefaultMaterial,
+    InfoBox,
+    onWindowResize,
+    createGroundPlaneXZ} from "../libs/util/util.js";
+import { barreirasTrack2, barreirasTrack3 } from './Walls.js';
 
-let scene, renderer, camera, material,material2 ,material3 , light, orbit; // Initial variables
-scene = new THREE.Scene();    // Create main scene
-renderer = initRenderer();    // Init a basic renderer
+let material ,material2 ,material3 //Initial variables
+// scene = new THREE.Scene();    // Create main scene
+// renderer = initRenderer();    // Init a basic renderer
 material = setDefaultMaterial('rgba(189, 82, 32, 1)'); // create a basic material
 material2 = setDefaultMaterial('rgba(23, 148, 39, 1)');
 material3 = setDefaultMaterial('rgba(139, 139, 139, 1)');
-light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
-camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
-scene.add(camera); // Add camera to the scene
-orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
+// light = initDefaultBasicLight(scene); // Create a basic light to illuminate the scene
+// camera = initCamera(new THREE.Vector3(0, 15, 30)); // Init camera in this position
+// scene.add(camera); // Add camera to the scene
+// orbit = new OrbitControls( camera, renderer.domElement ); // Enable mouse rotation, pan, zoom etc.
 
-// Listen window size changes
-window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
+// // Listen window size changes
+// window.addEventListener( 'resize', function(){onWindowResize(camera, renderer)}, false );
 
-// Show axes (parameter is size of each axis)
-let axesHelper = new THREE.AxesHelper( 12 );
-scene.add( axesHelper );
+// // Show axes (parameter is size of each axis)
+// let axesHelper = new THREE.AxesHelper( 12 );
+// scene.add( axesHelper );
 
-// create the ground plane
-let plane = createGroundPlaneXZ(20, 20);
-scene.add(plane);
+// // create the ground plane
+// let plane = createGroundPlaneXZ(20, 20)
+// scene.add(plane);
 
 const geometry = new THREE.BoxGeometry( 7, 5, 2.5 );
 const geometry2 = new THREE.CylinderGeometry( 2.5, 2.5, 2.5, 14);
@@ -63,28 +63,27 @@ baseMesh.receiveShadow = true;
 let b = baseMesh;
 
 
-let arvore = criaArvore2();
-let tunel = criaTunel();
-let carro = buildHovercraft(material,material ,material ,material);
+// let arvore = criaArvore2();
+// let tunel = criaTunel();
 
-scene.add(carro);
+// scene.add(tunel);
 
-// Use this to show information onscreen
-let controls = new InfoBox();
-  controls.add("Basic Scene");
-  controls.addParagraph();
-  controls.add("Use mouse to interact:");
-  controls.add("* Left button to rotate");
-  controls.add("* Right button to translate (pan)");
-  controls.add("* Scroll to zoom in/out.");
-  controls.show();
+// // Use this to show information onscreen
+// let controls = new InfoBox();
+//   controls.add("Basic Scene");
+//   controls.addParagraph();
+//   controls.add("Use mouse to interact:");
+//   controls.add("* Left button to rotate");
+//   controls.add("* Right button to translate (pan)");
+//   controls.add("* Scroll to zoom in/out.");
+//   controls.show();
 
-render();
-function render()
-{
-  requestAnimationFrame(render);
-  renderer.render(scene, camera) // Render scene
-}
+// render();
+// function render()
+// {
+//   requestAnimationFrame(render);
+//   renderer.render(scene, camera) // Render scene
+// }
 
 export function criaArvore1()
 {
@@ -238,4 +237,121 @@ function updateObject(mesh)
 {
    mesh.matrixAutoUpdate = false;
    mesh.updateMatrix();
+}
+
+export function criaArvoresQuadrado(scene) {
+    const totalArvoresPorLado = 15;
+    const offset = 10; // distância lateral da borda da pista
+    const pistaMin = -100, pistaMax = 100, pistaZmin = -100, pistaZmax = 100;
+    const arvores = [];
+    // Lado superior (z = pistaZmax + offset)
+    for (let i = 0; i < totalArvoresPorLado; i++) {
+        const x = pistaMin + (pistaMax - pistaMin) * i / (totalArvoresPorLado - 1);
+        const z = pistaZmax + offset;
+        const arvore = (i % 2 === 0) ? criaArvore1() : criaArvore2();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    // Lado inferior (z = pistaZmin - offset)
+    for (let i = 0; i < totalArvoresPorLado; i++) {
+        const x = pistaMin + (pistaMax - pistaMin) * i / (totalArvoresPorLado - 1);
+        const z = pistaZmin - offset;
+        const arvore = (i % 2 === 0) ? criaArvore2() : criaArvore1();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    // Lado esquerdo (x = pistaMin - offset)
+    for (let i = 1; i < totalArvoresPorLado - 1; i++) { // evita duplicar cantos
+        const z = pistaZmin + (pistaZmax - pistaZmin) * i / (totalArvoresPorLado - 1);
+        const x = pistaMin - offset;
+        const arvore = (i % 2 === 0) ? criaArvore1() : criaArvore2();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    // Lado direito (x = pistaMax + offset)
+    for (let i = 1; i < totalArvoresPorLado - 1; i++) {
+        const z = pistaZmin + (pistaZmax - pistaZmin) * i / (totalArvoresPorLado - 1);
+        const x = pistaMax + offset;
+        const arvore = (i % 2 === 0) ? criaArvore2() : criaArvore1();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    arvores.castShadow = true;
+    return arvores;
+}
+
+export function criaArvoresL(scene) {
+    const totalArvoresPorLado = 15;
+    const offset = 10; // distância lateral da borda da pista
+    const pistaMin = -100, pistaMax = 100, pistaZmin = -100, pistaZmax = 100;
+    const arvores = [];
+    // Lado inferior (z = pistaZmin - offset)
+    for (let i = 0; i < totalArvoresPorLado; i++) {
+        const x = pistaMin + (pistaMax - pistaMin) * i / (totalArvoresPorLado - 1);
+        const z = pistaZmin - offset;
+        const arvore = (i % 2 === 0) ? criaArvore2() : criaArvore1();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    // Lado direito (x = pistaMax + offset)
+    for (let i = 1; i < totalArvoresPorLado - 1; i++) {
+        const z = pistaZmin + (pistaZmax - pistaZmin) * i / (totalArvoresPorLado - 1);
+        const x = pistaMax + offset;
+        const arvore = (i % 2 === 0) ? criaArvore2() : criaArvore1();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    arvores.castShadow = true;
+    return arvores;
+}
+
+export function criaArvoresQuatroQuadrantes(scene) {
+  const totalArvoresPorLado = 15;
+    const offset = 10; // distância lateral da borda da pista
+    const pistaMin = -100, pistaMax = 100, pistaZmin = -100, pistaZmax = 100;
+    const arvores = [];
+    // Lado superior (z = pistaZmax + offset)
+    for (let i = 0; i < (totalArvoresPorLado)/2; i++) {
+        const x = 100 + (pistaMin + (pistaMax - pistaMin) * i / (totalArvoresPorLado - 1));
+        const z = pistaZmax + offset;
+        const arvore = (i % 2 === 0) ? criaArvore1() : criaArvore2();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    // Lado inferior (z = pistaZmin - offset)
+    for (let i = 0; i < (totalArvoresPorLado)/2; i++) {
+        const x = pistaMin + (pistaMax - pistaMin) * i / (totalArvoresPorLado - 1);
+        const z = pistaZmin - offset;
+        const arvore = (i % 2 === 0) ? criaArvore2() : criaArvore1();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    // Lado esquerdo (x = pistaMin - offset)
+    for (let i = 1; i < (totalArvoresPorLado - 1)/2; i++) { // evita duplicar cantos
+        const z = pistaZmin + (pistaZmax - pistaZmin) * i / (totalArvoresPorLado - 1);
+        const x = pistaMin - offset;
+        const arvore = (i % 2 === 0) ? criaArvore1() : criaArvore2();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    // Lado direito (x = pistaMax + offset)
+    for (let i = 1; i < (totalArvoresPorLado - 1)/2; i++) {
+        const z = 100 + (pistaZmin + (pistaZmax - pistaZmin) * i / (totalArvoresPorLado - 1));
+        const x = pistaMax + offset;
+        const arvore = (i % 2 === 0) ? criaArvore2() : criaArvore1();
+        arvore.position.set(x, 0, z);
+        scene.add(arvore);
+        arvores.push(arvore);
+    }
+    arvores.castShadow = true;
+    return arvores;
 }

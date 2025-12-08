@@ -1,9 +1,10 @@
 // Scene.js
 import * as THREE from 'three';
 import KeyboardState from '../libs/util/KeyboardState.js';
+import { criaArvoresQuadrado, criaArvoresL, criaArvoresQuatroQuadrantes, criaTunel } from './Elements.js';
+import { initRenderer } from './Renderer.js';
+import { initLight, updateLightFollow } from './Light.js';
 import {
-  initRenderer,
-  initDefaultBasicLight,
   setDefaultMaterial,
   InfoBox,
   SecondaryBox,
@@ -31,11 +32,9 @@ import { updateCameraFollow } from './Camera.js';
 import { checkLapCount, resetLapSystem, MAX_LAPS } from './Misc.js';
 
 // ------------------------------------------------------------
-// SCENE / LIGHT
+// SCENE
 // ------------------------------------------------------------
 export const scene = new THREE.Scene();
-export const renderer = initRenderer();
-initDefaultBasicLight(scene);
 scene.background = new THREE.Color(0x87CEEB);
 
 // ------------------------------------------------------------
@@ -55,6 +54,13 @@ export let currentTrack = 1;
 export const car = createCar(scene);
 // enemyCar criado, mas sem IA por enquanto — só para existir na cena
 export const enemyCar = createEnemyCar ? createEnemyCar(scene) : null;
+
+// ------------------------------------------------------
+// Criação da iluminação e renderer
+// ------------------------------------------------------
+
+const dirLight = initLight(scene, car);
+export const renderer = initRenderer();
 
 // ------------------------------------------------------------
 // CAMERA
@@ -145,6 +151,19 @@ track2.visible = false;
 track3.visible = false;
 
 // ------------------------------------------------------------
+// ARVORES EM VOLTA DAS PISTAS
+// ------------------------------------------------------------
+let arvoresAtuais = [];
+function removeArvores() {
+  for (const arvore of arvoresAtuais) {
+    scene.remove(arvore);
+  }
+  arvoresAtuais = [];
+}
+// Cria árvores da pista quadrada inicialmente
+arvoresAtuais = criaArvoresQuadrado(scene);
+
+// ------------------------------------------------------------
 // KEYBOARD UPDATE
 // ------------------------------------------------------------
 function keyboardUpdate() {
@@ -155,58 +174,53 @@ function keyboardUpdate() {
   moveDirection.left     = keyboard.pressed("left");
   moveDirection.right    = keyboard.pressed("right");
 
+
   // TRACK 1
   if (keyboard.down("1") && currentTrack !== 1) {
     currentTrack = 1;
-
     track1.visible = true;
     track2.visible = false;
     track3.visible = false;
-
     groupSquareWalls.visible = true;
     groupLWalls.visible = false;
     groupThirdWalls.visible = false;
-
     resetCarPosition(car,enemyCar, 1);
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresQuadrado(scene);
   }
 
   // TRACK 2
   if (keyboard.down("2") && currentTrack !== 2) {
     currentTrack = 2;
-
     track1.visible = false;
     track2.visible = true;
     track3.visible = false;
-
     groupSquareWalls.visible = false;
     groupLWalls.visible = true;
     groupThirdWalls.visible = false;
-
     resetCarPosition(car,enemyCar, 2);
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresL(scene);
   }
 
   // TRACK 3 (NOVA)
   if (keyboard.down("3") && currentTrack !== 3) {
     currentTrack = 3;
-
     track1.visible = false;
     track2.visible = false;
     track3.visible = true;
-
     groupSquareWalls.visible = false;
     groupLWalls.visible = false;
     groupThirdWalls.visible = true;
-
     resetCarPosition(car,enemyCar, 3);
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresQuatroQuadrantes(scene);
   }
 }
 
@@ -278,6 +292,7 @@ function render() {
   updateCar(car, delta, moveDirection);
   // NOTE: por enquanto não há IA/controle do enemyCar — atualize depois se quiser
   updateCameraFollow(camera, car, moveDirection);
+  updateLightFollow(car, dirLight);
 
   checkCollision(currentTrack);
 

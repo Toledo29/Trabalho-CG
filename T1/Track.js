@@ -19,7 +19,12 @@ export function createTrack(scene, materialPista) {
   const checkpoint2 = makeCheckpoint(90, START_POS_TRACK1.z);
   const checkpoint3 = makeCheckpoint(90, 90);
   const checkpoint4 = makeCheckpoint(-90, 90);
+  checkpoint1.receiveShadow = true;
+  checkpoint2.receiveShadow = true;
+  checkpoint3.receiveShadow = true;
+  checkpoint4.receiveShadow = true;
   track1.add(checkpoint1, checkpoint2, checkpoint3, checkpoint4);
+  track1.receiveShadow = true;
 
 
   // ------------------------------------------------------------
@@ -34,6 +39,12 @@ export function createTrack(scene, materialPista) {
   const checkpoint8  = makeCheckpoint(-10, 90);
   const checkpoint9  = makeCheckpoint(-10, -10);
   const checkpoint10 = makeCheckpoint(-90, -10);
+  checkpoint5.receiveShadow = true;
+  checkpoint6.receiveShadow = true;
+  checkpoint7.receiveShadow = true;
+  checkpoint8.receiveShadow = true;
+  checkpoint9.receiveShadow = true;
+  checkpoint10.receiveShadow = true;
   track2.add(checkpoint5, checkpoint6, checkpoint7, checkpoint8, checkpoint9, checkpoint10);
 
 
@@ -47,6 +58,10 @@ export function createTrack(scene, materialPista) {
   const checkpoint12 = makeCheckpoint(0, 90);
   const checkpoint13 = makeCheckpoint(80, 10);
   const checkpoint14 = makeCheckpoint(-80, 10);
+  checkpoint11.receiveShadow = true;
+  checkpoint12.receiveShadow = true;
+  checkpoint13.receiveShadow = true;
+  checkpoint14.receiveShadow = true;
   track3.add(checkpoint11, checkpoint12, checkpoint13, checkpoint14);
 
 
@@ -73,7 +88,7 @@ export function createTrack(scene, materialPista) {
 function makeCheckpoint(x, z) {
   const m = new THREE.Mesh(
     new THREE.PlaneGeometry(20, 20),
-    new THREE.MeshBasicMaterial({ color: 0xffff00 })
+    new THREE.MeshLambertMaterial({ color: 0xffff00 })
   );
   m.rotation.x = degreesToRadians(-90);
   m.position.set(x, 0.05, z);
@@ -105,6 +120,11 @@ export function createSquareTrackElements(trackGroup, material) {
   p3.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(-90, -0.1, 0)).multiply(rot);
   p4.matrix.identity().multiply(new THREE.Matrix4().makeTranslation(90, -0.1, 0)).multiply(rot);
 
+  p1.receiveShadow = true;
+  p2.receiveShadow = true;
+  p3.receiveShadow = true;
+  p4.receiveShadow = true;
+
   trackGroup.add(p1, p2, p3, p4);
 }
 
@@ -116,12 +136,12 @@ export function createLTrackElements(trackGroup, material) {
   const trackWidth = 20;
 
   const segmentData = [
-    { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, -0.1, -90) },
-    { length: 180, isHorizontal: false, pos: new THREE.Vector3(90, -0.1, 10) },
-    { length: 100, isHorizontal: true, pos: new THREE.Vector3(30, -0.1, 90) },
-    { length: 100, isHorizontal: false, pos: new THREE.Vector3(-10, -0.1, 30) },
-    { length: 80, isHorizontal: true, pos: new THREE.Vector3(-60, -0.1, -10) },
-    { length: 60, isHorizontal: false, pos: new THREE.Vector3(-90, -0.1, -50) },
+    { length: 200, isHorizontal: true, pos: new THREE.Vector3(0, 0, -90) },
+    { length: 180, isHorizontal: false, pos: new THREE.Vector3(90, 0, 10) },
+    { length: 100, isHorizontal: true, pos: new THREE.Vector3(30, 0, 90) },
+    { length: 100, isHorizontal: false, pos: new THREE.Vector3(-10, 0, 30) },
+    { length: 80, isHorizontal: true, pos: new THREE.Vector3(-60, 0, -10) },
+    { length: 60, isHorizontal: false, pos: new THREE.Vector3(-90, 0, -50) },
   ];
 
   let rot = new THREE.Matrix4().makeRotationX(degreesToRadians(-90));
@@ -136,7 +156,7 @@ export function createLTrackElements(trackGroup, material) {
     mesh.matrix.identity()
       .multiply(new THREE.Matrix4().makeTranslation(s.pos.x, s.pos.y, s.pos.z))
       .multiply(rot);
-
+    mesh.receiveShadow = true;
     trackGroup.add(mesh);
   });
 }
@@ -171,6 +191,8 @@ export function createFourQuadrantTrack(trackGroup, material) {
       .multiply(new THREE.Matrix4().makeTranslation(s.pos.x, s.pos.y, s.pos.z))
       .multiply(rot);
 
+    mesh.receiveShadow = true;
+    
     trackGroup.add(mesh);
   });
 }

@@ -82,7 +82,7 @@ export function createCar(scene) {
   );
 
   // posição inicial padrão
-  car.position.set(-100.0, 0.5, -100.0);
+  car.position.set(-100.0, 0, -100.0);
 
   car.userData = {
     speed: 0,
@@ -93,7 +93,6 @@ export function createCar(scene) {
     maxReverseSpeed: -30,
     turnSpeed: THREE.MathUtils.degToRad(120)
   };
-
   scene.add(car);
   return car;
 }
