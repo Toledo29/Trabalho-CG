@@ -245,12 +245,13 @@ function checkCollision(track) {
 
   const list = track === 1 ? barreirasTrack1 :
               track === 2 ? barreirasTrack2 :
-                             barreirasTrack3;  // pista 3 usa paredes da 3
+                             barreirasTrack3; // para pista 3
 
   for (const { mesh, bb } of list) {
     bb.setFromObject(mesh);
 
     if (carBB.intersectsBox(bb)) {
+      // ======= Detecção de penetração =======
       const overlapX = Math.min(carBB.max.x, bb.max.x) - Math.max(carBB.min.x, bb.min.x);
       const overlapZ = Math.min(carBB.max.z, bb.max.z) - Math.max(carBB.min.z, bb.min.z);
 
@@ -265,27 +266,27 @@ function checkCollision(track) {
         correction.copy(normal).multiplyScalar(overlapZ + 0.05);
       }
 
+      // Corrige posição para evitar penetração
       car.position.add(correction);
 
+      // ======= Cálculo do ângulo e fator de desaceleração =======
       const movementDir = carDir.clone().multiplyScalar(Math.sign(car.userData.speed));
       const angleDeg = THREE.MathUtils.radToDeg(movementDir.angleTo(normal));
 
-      let reductionFactor = 1.0;
+      // Quanto mais frontal o impacto (ângulo > 90), maior a perda
+      let reductionRate = 0.02; // desaceleração base suave
       if (angleDeg > 90) {
-        reductionFactor = 1.0 - (angleDeg - 90) / 90;
-        reductionFactor = Math.max(0, reductionFactor);
+        const factor = (angleDeg - 90) / 90; // 0 a 1
+        reductionRate += factor * 0.08; // até 0.1 total
       }
 
-      const velocityDir = carDir.clone().multiplyScalar(car.userData.speed);
-      const normalComponent = normal.clone().multiplyScalar(velocityDir.dot(normal));
-      const tangentialComponent = velocityDir.clone().sub(normalComponent);
-
-      if (velocityDir.dot(normal) < 0) velocityDir.sub(normalComponent);
-
-      const newSpeed = tangentialComponent.length() * reductionFactor;
+      // ======= Redução gradual até zero =======
+      const currentSpeed = Math.abs(car.userData.speed);
+      const newSpeed = Math.max(0, currentSpeed - reductionRate * currentSpeed * 5);
       car.userData.speed = Math.sign(car.userData.speed) * newSpeed;
 
-      if (angleDeg >= 170) car.userData.speed = 0;
+      // Parar totalmente se muito lento
+      if (Math.abs(car.userData.speed) < 0.05) car.userData.speed = 0;
 
       return true;
     }
@@ -293,6 +294,7 @@ function checkCollision(track) {
 
   return false;
 }
+
 
 // ------------------------------------------------------------
 // MAIN LOOP
