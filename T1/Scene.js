@@ -1,9 +1,10 @@
 // Scene.js
 import * as THREE from 'three';
 import KeyboardState from '../libs/util/KeyboardState.js';
+import { criaArvoresQuadrado, criaArvoresL, criaArvoresQuatroQuadrantes, criaTunel } from './Elements.js';
+import { initRenderer } from './Renderer.js';
+import { initLight, updateLightFollow } from './Light.js';
 import {
-  initRenderer,
-  initDefaultBasicLight,
   setDefaultMaterial,
   InfoBox,
   SecondaryBox,
@@ -31,11 +32,9 @@ import { updateCameraFollow } from './Camera.js';
 import { checkLapCount, resetLapSystem, MAX_LAPS, winner } from './Misc.js';
 
 // ------------------------------------------------------------
-// SCENE / LIGHT
+// SCENE
 // ------------------------------------------------------------
 export const scene = new THREE.Scene();
-export const renderer = initRenderer();
-initDefaultBasicLight(scene);
 scene.background = new THREE.Color(0x87CEEB);
 
 // ------------------------------------------------------------
@@ -53,7 +52,15 @@ export let currentTrack = 1;
 // CAR (PLAYER) e INIMIGO
 // ------------------------------------------------------------
 export const car = createCar(scene);
-export const enemyCar = createEnemyCar(scene);
+// enemyCar criado, mas sem IA por enquanto — só para existir na cena
+export const enemyCar = createEnemyCar ? createEnemyCar(scene) : null;
+
+// ------------------------------------------------------
+// Criação da iluminação e renderer
+// ------------------------------------------------------
+
+const dirLight = initLight(scene, car);
+export const renderer = initRenderer();
 
 // ------------------------------------------------------------
 // CAMERA
@@ -144,6 +151,25 @@ track2.visible = false;
 track3.visible = false;
 
 // ------------------------------------------------------------
+// ARVORES EM VOLTA DAS PISTAS
+// ------------------------------------------------------------
+let arvoresAtuais = [];
+function removeArvores() {
+  for (const arvore of arvoresAtuais) {
+    scene.remove(arvore);
+  }
+  arvoresAtuais = [];
+}
+// Cria árvores da pista quadrada inicialmente
+arvoresAtuais = criaArvoresQuadrado(scene);
+
+//cria tunel
+
+const tunel = criaTunel(scene);
+tunel.position.set(-90, -6, 0);
+scene.add(tunel);
+
+// ------------------------------------------------------------
 // KEYBOARD UPDATE
 // ------------------------------------------------------------
 function keyboardUpdate() {
@@ -154,61 +180,59 @@ function keyboardUpdate() {
   moveDirection.left     = keyboard.pressed("left");
   moveDirection.right    = keyboard.pressed("right");
 
+
   // TRACK 1
   if (keyboard.down("1") && currentTrack !== 1) {
     currentTrack = 1;
-
     track1.visible = true;
     track2.visible = false;
     track3.visible = false;
-
     groupSquareWalls.visible = true;
     groupLWalls.visible = false;
     groupThirdWalls.visible = false;
-
     resetCarPosition(car,enemyCar, 1);
-    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresQuadrado(scene);
   }
 
   // TRACK 2
   if (keyboard.down("2") && currentTrack !== 2) {
     currentTrack = 2;
-
     track1.visible = false;
     track2.visible = true;
     track3.visible = false;
-
     groupSquareWalls.visible = false;
     groupLWalls.visible = true;
     groupThirdWalls.visible = false;
-
     resetCarPosition(car,enemyCar, 2);
-    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresL(scene);
+    scene.remove(tunel);
+    tunel.position.set(-90, -6, -50);
+    scene.add(tunel);
   }
 
   // TRACK 3 (NOVA)
   if (keyboard.down("3") && currentTrack !== 3) {
     currentTrack = 3;
-
     track1.visible = false;
     track2.visible = false;
     track3.visible = true;
-
     groupSquareWalls.visible = false;
     groupLWalls.visible = false;
     groupThirdWalls.visible = true;
-
     resetCarPosition(car,enemyCar, 3);
-    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
-    
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
+    removeArvores();
+    arvoresAtuais = criaArvoresQuatroQuadrantes(scene);
+    scene.remove(tunel);
+    tunel.position.set(-80, -6, -50);
+    scene.add(tunel);
   }
 }
 
@@ -222,14 +246,15 @@ function checkVehicleCollision(vehicle, track) {
 
   const list = track === 1 ? barreirasTrack1 :
               track === 2 ? barreirasTrack2 :
-                             barreirasTrack3;  // pista 3 usa paredes da 3
+                             barreirasTrack3; // para pista 3
 
   for (const { mesh, bb } of list) {
     bb.setFromObject(mesh);
 
-    if (vehicleBB.intersectsBox(bb)) {
-      const overlapX = Math.min(vehicleBB.max.x, bb.max.x) - Math.max(vehicleBB.min.x, bb.min.x);
-      const overlapZ = Math.min(vehicleBB.max.z, bb.max.z) - Math.max(vehicleBB.min.z, bb.min.z);
+    if (carBB.intersectsBox(bb)) {
+      // ======= Detecção de penetração =======
+      const overlapX = Math.min(carBB.max.x, bb.max.x) - Math.max(carBB.min.x, bb.min.x);
+      const overlapZ = Math.min(carBB.max.z, bb.max.z) - Math.max(carBB.min.z, bb.min.z);
 
       let normal = new THREE.Vector3();
       let correction = new THREE.Vector3();
@@ -242,31 +267,27 @@ function checkVehicleCollision(vehicle, track) {
         correction.copy(normal).multiplyScalar(overlapZ + 0.05);
       }
 
-      vehicle.position.add(correction);
+      // Corrige posição para evitar penetração
+      car.position.add(correction);
 
-      const vehicleSpeed = vehicle.userData.speed !== undefined ? vehicle.userData.speed : 22;
-      const movementDir = vehicleDir.clone().multiplyScalar(Math.sign(vehicleSpeed) || 1);
+      // ======= Cálculo do ângulo e fator de desaceleração =======
+      const movementDir = carDir.clone().multiplyScalar(Math.sign(car.userData.speed));
       const angleDeg = THREE.MathUtils.radToDeg(movementDir.angleTo(normal));
 
-      let reductionFactor = 1.0;
+      // Quanto mais frontal o impacto (ângulo > 90), maior a perda
+      let reductionRate = 0.02; // desaceleração base suave
       if (angleDeg > 90) {
-        reductionFactor = 1.0 - (angleDeg - 90) / 90;
-        reductionFactor = Math.max(0, reductionFactor);
+        const factor = (angleDeg - 90) / 90; // 0 a 1
+        reductionRate += factor * 0.08; // até 0.1 total
       }
 
-      const velocityDir = vehicleDir.clone().multiplyScalar(vehicleSpeed);
-      const normalComponent = normal.clone().multiplyScalar(velocityDir.dot(normal));
-      const tangentialComponent = velocityDir.clone().sub(normalComponent);
+      // ======= Redução gradual até zero =======
+      const currentSpeed = Math.abs(car.userData.speed);
+      const newSpeed = Math.max(0, currentSpeed - reductionRate * currentSpeed * 5);
+      car.userData.speed = Math.sign(car.userData.speed) * newSpeed;
 
-      if (velocityDir.dot(normal) < 0) velocityDir.sub(normalComponent);
-
-      const newSpeed = tangentialComponent.length() * reductionFactor;
-      
-      // Atualiza a velocidade do veículo
-      if (vehicle.userData.speed !== undefined) {
-        vehicle.userData.speed = Math.sign(vehicle.userData.speed) * newSpeed;
-        if (angleDeg >= 170) vehicle.userData.speed = 0;
-      }
+      // Parar totalmente se muito lento
+      if (Math.abs(car.userData.speed) < 0.05) car.userData.speed = 0;
 
       return true;
     }
@@ -275,74 +296,6 @@ function checkVehicleCollision(vehicle, track) {
   return false;
 }
 
-// Função de compatibilidade para o carro do jogador
-function checkCollision(track) {
-  return checkVehicleCollision(car, track);
-}
-
-// ------------------------------------------------------------
-// COLISÃO ENTRE OS DOIS CARROS
-// ------------------------------------------------------------
-function checkCarToCarCollision(car1, car2) {
-  const car1BB = new THREE.Box3().setFromObject(car1);
-  const car2BB = new THREE.Box3().setFromObject(car2);
-
-  if (car1BB.intersectsBox(car2BB)) {
-    // Calcula overlap
-    const overlapX = Math.min(car1BB.max.x, car2BB.max.x) - Math.max(car1BB.min.x, car2BB.min.x);
-    const overlapZ = Math.min(car1BB.max.z, car2BB.max.z) - Math.max(car1BB.min.z, car2BB.min.z);
-
-    // Determina direção da correção
-    let normal = new THREE.Vector3();
-    let correction = new THREE.Vector3();
-
-    if (overlapX < overlapZ) {
-      normal.set(car1.position.x > car2.position.x ? 1 : -1, 0, 0);
-      correction.copy(normal).multiplyScalar(overlapX / 2 + 0.05);
-    } else {
-      normal.set(0, 0, car1.position.z > car2.position.z ? 1 : -1);
-      correction.copy(normal).multiplyScalar(overlapZ / 2 + 0.05);
-    }
-
-    // Separa os carros
-    car1.position.add(correction);
-    car2.position.sub(correction);
-
-    // Reduz velocidade de ambos os carros
-    const car1Speed = car1.userData.speed !== undefined ? car1.userData.speed : 0;
-    const car2Speed = car2.userData.speed !== undefined ? car2.userData.speed : 0;
-
-    // Direções dos carros
-    const car1Dir = new THREE.Vector3(Math.cos(car1.rotation.y), 0, -Math.sin(car1.rotation.y));
-    const car2Dir = new THREE.Vector3(Math.cos(car2.rotation.y), 0, -Math.sin(car2.rotation.y));
-
-    // Calcula impacto
-    const car1Vel = car1Dir.clone().multiplyScalar(car1Speed);
-    const car2Vel = car2Dir.clone().multiplyScalar(car2Speed);
-    const relativeVel = car1Vel.clone().sub(car2Vel);
-    const impact = relativeVel.dot(normal);
-
-    // Se estão se aproximando, aplica força de repulsão
-    if (impact < 0) {
-      const bounceFactor = 0.3; // Fator de rebote
-      const impulse = impact * bounceFactor;
-
-      if (car1.userData.speed !== undefined) {
-        const newSpeed1 = Math.max(0, car1Speed + impulse * 0.5);
-        car1.userData.speed = Math.sign(car1Speed) * newSpeed1;
-      }
-
-      if (car2.userData.speed !== undefined) {
-        const newSpeed2 = Math.max(0, car2Speed - impulse * 0.5);
-        car2.userData.speed = Math.sign(car2Speed) * newSpeed2;
-      }
-    }
-
-    return true;
-  }
-
-  return false;
-}
 
 // ------------------------------------------------------------
 // MAIN LOOP
@@ -354,6 +307,7 @@ function render() {
   updateCar(car, delta, moveDirection);
   updateEnemyCar(enemyCar, delta, currentTrack);
   updateCameraFollow(camera, car, moveDirection);
+  updateLightFollow(car, dirLight);
 
   // Verifica colisões para ambos os veículos
   checkCollision(currentTrack);
