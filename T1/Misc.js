@@ -24,7 +24,7 @@ export const checkpointsTrack1 = [
   { pos: new THREE.Vector3(-40, 1, -90), radius: 20 }, // CP1
   { pos: new THREE.Vector3(90, 1, -90),  radius: 20 }, // CP2
   { pos: new THREE.Vector3(90, 1, 90),   radius: 20 }, // CP3
-  { pos: new THREE.Vector3(-90, 1, 90),  radius: 20 }, // CP4 (corrigido para -90, 90)
+  { pos: new THREE.Vector3(-90, 1, 90),  radius: 20 }, // CP4
   { pos: new THREE.Vector3(-90, 1, -90), radius: 20 }  // CP15
 ];
 

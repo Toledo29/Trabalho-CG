@@ -12,7 +12,7 @@ import {
 } from "../libs/util/util.js";
 
 import { createCar, resetCarPosition, updateCar } from './Car.js';
-import { createEnemyCar, updateEnemyCar, resetEnemyCheckpointIndex } from './Enemy.js';
+import { createEnemyCar, updateEnemyCar, resetEnemyCheckpointIndex, resetEnemyPosition } from './Enemy.js';
 import { createTrack, track1, track2, track3 } from './Track.js';
 
 import {
@@ -52,8 +52,7 @@ export let currentTrack = 1;
 // CAR (PLAYER) e INIMIGO
 // ------------------------------------------------------------
 export const car = createCar(scene);
-// enemyCar criado, mas sem IA por enquanto — só para existir na cena
-export const enemyCar = createEnemyCar ? createEnemyCar(scene) : null;
+export const enemyCar = createEnemyCar(scene);
 
 // ------------------------------------------------------
 // Criação da iluminação e renderer
@@ -190,7 +189,10 @@ function keyboardUpdate() {
     groupSquareWalls.visible = true;
     groupLWalls.visible = false;
     groupThirdWalls.visible = false;
-    resetCarPosition(car,enemyCar, 1);
+
+    resetCarPosition(car, enemyCar, 1);
+    resetEnemyPosition(enemyCar, 1);
+    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
     removeArvores();
@@ -206,7 +208,10 @@ function keyboardUpdate() {
     groupSquareWalls.visible = false;
     groupLWalls.visible = true;
     groupThirdWalls.visible = false;
-    resetCarPosition(car,enemyCar, 2);
+
+    resetCarPosition(car, enemyCar, 2);
+    resetEnemyPosition(enemyCar, 2);
+    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
     removeArvores();
@@ -225,7 +230,10 @@ function keyboardUpdate() {
     groupSquareWalls.visible = false;
     groupLWalls.visible = false;
     groupThirdWalls.visible = true;
-    resetCarPosition(car,enemyCar, 3);
+
+    resetCarPosition(car, enemyCar, 3);
+    resetEnemyPosition(enemyCar, 3);
+    resetEnemyCheckpointIndex(); // Reseta o checkpoint do adversário
     resetLapSystem();
     lapDiv.innerText = "Volta: 0 / " + MAX_LAPS;
     removeArvores();
@@ -251,10 +259,10 @@ function checkVehicleCollision(vehicle, track) {
   for (const { mesh, bb } of list) {
     bb.setFromObject(mesh);
 
-    if (carBB.intersectsBox(bb)) {
+    if (vehicleBB.intersectsBox(bb)) {
       // ======= Detecção de penetração =======
-      const overlapX = Math.min(carBB.max.x, bb.max.x) - Math.max(carBB.min.x, bb.min.x);
-      const overlapZ = Math.min(carBB.max.z, bb.max.z) - Math.max(carBB.min.z, bb.min.z);
+      const overlapX = Math.min(vehicleBB.max.x, bb.max.x) - Math.max(vehicleBB.min.x, bb.min.x);
+      const overlapZ = Math.min(vehicleBB.max.z, bb.max.z) - Math.max(vehicleBB.min.z, bb.min.z);
 
       let normal = new THREE.Vector3();
       let correction = new THREE.Vector3();
@@ -268,10 +276,11 @@ function checkVehicleCollision(vehicle, track) {
       }
 
       // Corrige posição para evitar penetração
-      car.position.add(correction);
+      vehicle.position.add(correction);
 
       // ======= Cálculo do ângulo e fator de desaceleração =======
-      const movementDir = carDir.clone().multiplyScalar(Math.sign(car.userData.speed));
+      const vehicleSpeed = vehicle.userData.speed !== undefined ? vehicle.userData.speed : 0;
+      const movementDir = vehicleDir.clone().multiplyScalar(Math.sign(vehicleSpeed) || 1);
       const angleDeg = THREE.MathUtils.radToDeg(movementDir.angleTo(normal));
 
       // Quanto mais frontal o impacto (ângulo > 90), maior a perda
@@ -282,12 +291,14 @@ function checkVehicleCollision(vehicle, track) {
       }
 
       // ======= Redução gradual até zero =======
-      const currentSpeed = Math.abs(car.userData.speed);
+      const currentSpeed = Math.abs(vehicleSpeed);
       const newSpeed = Math.max(0, currentSpeed - reductionRate * currentSpeed * 5);
-      car.userData.speed = Math.sign(car.userData.speed) * newSpeed;
-
-      // Parar totalmente se muito lento
-      if (Math.abs(car.userData.speed) < 0.05) car.userData.speed = 0;
+      
+      if (vehicle.userData.speed !== undefined) {
+        vehicle.userData.speed = Math.sign(vehicleSpeed) * newSpeed;
+        // Parar totalmente se muito lento
+        if (Math.abs(vehicle.userData.speed) < 0.05) vehicle.userData.speed = 0;
+      }
 
       return true;
     }
@@ -296,6 +307,67 @@ function checkVehicleCollision(vehicle, track) {
   return false;
 }
 
+// Função de compatibilidade para o carro do jogador
+function checkCollision(track) {
+  return checkVehicleCollision(car, track);
+}
+
+// ------------------------------------------------------------
+// COLISÃO ENTRE OS DOIS CARROS
+// ------------------------------------------------------------
+function checkCarToCarCollision(car1, car2) {
+  const car1BB = new THREE.Box3().setFromObject(car1);
+  const car2BB = new THREE.Box3().setFromObject(car2);
+
+  if (car1BB.intersectsBox(car2BB)) {
+    const overlapX = Math.min(car1BB.max.x, car2BB.max.x) - Math.max(car1BB.min.x, car2BB.min.x);
+    const overlapZ = Math.min(car1BB.max.z, car2BB.max.z) - Math.max(car1BB.min.z, car2BB.min.z);
+
+    let normal = new THREE.Vector3();
+    let correction = new THREE.Vector3();
+
+    if (overlapX < overlapZ) {
+      normal.set(car1.position.x > car2.position.x ? 1 : -1, 0, 0);
+      correction.copy(normal).multiplyScalar(overlapX / 2 + 0.05);
+    } else {
+      normal.set(0, 0, car1.position.z > car2.position.z ? 1 : -1);
+      correction.copy(normal).multiplyScalar(overlapZ / 2 + 0.05);
+    }
+
+    car1.position.add(correction);
+    car2.position.sub(correction);
+
+    const car1Speed = car1.userData.speed !== undefined ? car1.userData.speed : 0;
+    const car2Speed = car2.userData.speed !== undefined ? car2.userData.speed : 0;
+
+    const car1Dir = new THREE.Vector3(Math.cos(car1.rotation.y), 0, -Math.sin(car1.rotation.y));
+    const car2Dir = new THREE.Vector3(Math.cos(car2.rotation.y), 0, -Math.sin(car2.rotation.y));
+
+    const car1Vel = car1Dir.clone().multiplyScalar(car1Speed);
+    const car2Vel = car2Dir.clone().multiplyScalar(car2Speed);
+    const relativeVel = car1Vel.clone().sub(car2Vel);
+    const impact = relativeVel.dot(normal);
+
+    if (impact < 0) {
+      const bounceFactor = 0.3;
+      const impulse = impact * bounceFactor;
+
+      if (car1.userData.speed !== undefined) {
+        const newSpeed1 = Math.max(0, car1Speed + impulse * 0.5);
+        car1.userData.speed = Math.sign(car1Speed) * newSpeed1;
+      }
+
+      if (car2.userData.speed !== undefined) {
+        const newSpeed2 = Math.max(0, car2Speed - impulse * 0.5);
+        car2.userData.speed = Math.sign(car2Speed) * newSpeed2;
+      }
+    }
+
+    return true;
+  }
+
+  return false;
+}
 
 // ------------------------------------------------------------
 // MAIN LOOP
@@ -341,4 +413,6 @@ function render() {
 // INIT
 // ------------------------------------------------------------
 resetCarPosition(car, enemyCar, 1);
+resetEnemyPosition(enemyCar, 1);
+resetEnemyCheckpointIndex();
 render();

@@ -19,12 +19,7 @@ export function createTrack(scene, materialPista) {
   const checkpoint2 = makeCheckpoint(90, START_POS_TRACK1.z);
   const checkpoint3 = makeCheckpoint(90, 90);
   const checkpoint4 = makeCheckpoint(-90, 90);
-  checkpoint1.receiveShadow = true;
-  checkpoint2.receiveShadow = true;
-  checkpoint3.receiveShadow = true;
-  checkpoint4.receiveShadow = true;
   track1.add(checkpoint1, checkpoint2, checkpoint3, checkpoint4);
-  track1.receiveShadow = true;
 
 
   // ------------------------------------------------------------

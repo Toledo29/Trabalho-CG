@@ -146,6 +146,13 @@
           aiEnabled: true,
           aiTargetIndex: 0
       };
+      
+      enemy.traverse(obj => {
+    if (obj.isMesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+    }
+});
 
       scene.add(enemy);
       return enemy;
